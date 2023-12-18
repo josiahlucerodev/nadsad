@@ -1,0 +1,7 @@
+[submodule "externals/nacmake"]
+	path = externals/nacmake
+	url = https://github.com/NovoAffectDev/nacmake
+[submodule "externals/natl"]
+	path = externals/natl
+	url = https://github.com/NovoAffectDev/natl
+	branch = dev
