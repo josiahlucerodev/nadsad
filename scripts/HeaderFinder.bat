@@ -1,0 +1,1 @@
+python.exe ../externals/nacmake/scripts/HeaderFinder.py %cd%/../nadsad
