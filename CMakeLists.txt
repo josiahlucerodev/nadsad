@@ -8,10 +8,18 @@ project(nadsad)
 if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR) #IS ROOT
 	#NACMAKE
 	include(externals/nacmake/externals_nacmake.cmake)
+
+	#NATL
+	add_subdirectory(externals/natl)
 else()
 	#NACMAKE
 	if(NOT TARGET nacmake)
 		message(FATAL_ERROR "nadsad: requires nacmake")
+	endif()
+
+	#NATL
+	if(NOT TARGET natl) 
+		message(FATAL_ERROR "nadsad: requires natl")
 	endif()
 endif()
 
