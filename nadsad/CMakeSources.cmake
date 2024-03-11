@@ -1,4 +1,6 @@
 set(HEADER_FILES
+nadsad/assciFormat/lexer.h
+nadsad/assciFormat/serializer.h
 nadsad/nadsad.h
 )
 
