@@ -1,0 +1,12 @@
+		constexpr void writeUI8(const natl::ui8 value) noexcept { 
+			natl::intToStringBinaryStringType<container_type, natl::ui8>(storage, value);
+		}
+		constexpr void writeUI16(const natl::ui16 value) noexcept { 
+			natl::intToStringBinaryStringType<container_type, natl::ui16>(storage, value);
+		}
+		constexpr void writeUI32(const natl::ui32 value) noexcept { 
+			natl::intToStringBinaryStringType<container_type, natl::ui32>(storage, value);
+		}
+		constexpr void writeUI64(const natl::ui64 value) noexcept { 
+			natl::intToStringBinaryStringType<container_type, natl::ui64>(storage, value);
+		}

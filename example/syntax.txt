@@ -1,73 +1,15 @@
 nadsad
 novo affect data serialization and deserialization 
+ 
+{}
+[]
+,:
+"'
 
-types 
+op 
 i8 i16 i32 i64
 ui8 ui16 ui32 ui64
 f32 f64 
-str 
-schema 
-struct 
-variant 
-array 
-
-vec schema: {
-	x op f32
-	y op f32
-	z op f32 
-}
-
-example dic {str, i8}: { 
-	"1" : 0.0, 
-	"2" : 0.0, 
-	"3" : 0.0 
-}
-
-example dic str f32: { "x" : 0.0, "y" : 0.0, "z" : 0.0 }
-
-example i8: 255 
-example array i8: [ 1, 1, 1, 1]
-example dic str f32: { "x" : 0.0, "y" : 0.0, "z", 0.0 }
-
-example struct {
-	x f32: 0.0
-	y f32: 0.0
-	z f32: 0.0
-	x op enum TokenType: the
-	op vec {
-	}
-	x variant Type: 
-}
-
-eample tstruct vec: {
-	
-}
-
-example dic {str, vec3} { "x": { x: 1, y: 3 } }
-
-Type variant_type: {
-	ParserError,
-	LexicalError,
-}
-
-example op variant Type i8 {
-	x
-}
-
-example op array op variant Type [ op variant ParserError {} ]
-
-TokenType enum: {
-	the
-	fish
-	eat 
-}
-
-TokenType enum_type: {
-	the 
-	fish 
-	eat 
-}
-
-example array enum TokenType: [the, fish]
-
-example 
+str char 
+array dic struct 
+blob file 
