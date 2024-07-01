@@ -140,7 +140,8 @@ namespace nadsad::ascii {
 		LexicalError error;
 	};
 
-	constexpr LexicalInfo lexicalAnalysis(const natl::ArrayView<const natl::Ascii> source) noexcept {
+	constexpr LexicalInfo lexicalAnalysis(const natl::ArrayView<const natl::Ascii> source, 
+		const natl::Bool enableFastIndexing = true) noexcept {
 		LexicalInfo lexicalInfo{};
 
 		if (source.size() > static_cast<natl::Size>(natl::Limits<natl::ui64>::max())) {
@@ -170,6 +171,8 @@ namespace nadsad::ascii {
 			lexicalInfo.tokens.push_back(Token{ tokenType, size, offset });
 		};
 
+		natl::SmallDynArray<Token*, 10> curlyScopeStack;
+
 		natl::ui64 index = 0;
 		while (index < source.size()) {
 			const natl::Ascii& character = source[index];
@@ -187,12 +190,6 @@ namespace nadsad::ascii {
 				case ',': 
 					tokenType = TokenType::comma;
 					break;
-				case '{': 
-					tokenType = TokenType::leftCurly;
-					break;
-				case '}': 
-					tokenType = TokenType::rightCurly;
-					break;
 				case '[': 
 					tokenType = TokenType::leftSquare;
 					break;
@@ -203,6 +200,33 @@ namespace nadsad::ascii {
 					lexicalInfo.newLineOffsets.push_back(index);
 					index++;
 					continue;
+				case '{': 
+					if (enableFastIndexing) {
+						addToken(TokenType::leftCurly, 1, index);
+						index++;
+
+						curlyScopeStack.push_back(&lexicalInfo.tokens.back());
+						continue;
+					} else {
+						tokenType = TokenType::leftCurly;
+						break;
+					}
+				case '}': 
+					if (enableFastIndexing) {
+						natl::Size size = 1;
+						if (curlyScopeStack.isNotEmpty()) {
+							Token& curlyStart = *curlyScopeStack.back();
+							size = index - curlyStart.offset;
+							curlyStart.size = size;
+						} 
+
+						addToken(TokenType::rightCurly, size, index);
+						index++;
+						continue;
+					} else {
+						tokenType = TokenType::rightCurly;
+						break;
+					}
 				case '\'':
 				{
 					const natl::ui64 startIndex = index;
@@ -428,7 +452,6 @@ namespace nadsad::ascii {
 		const natl::Size newlineIndex = natl::lowerBoundIndex(offset, newLineOffsets);
 		return newlineIndex;
 	}
-	
 }
 
 namespace natl::serialization {
@@ -461,8 +484,7 @@ namespace natl::serialization {
 			serializer.asArrayOf(natls::BasicDataType::t_struct, lexicalInfo.tokens.size());
 
 			serializer.beginWriteArray();
-			for (natl::Size i = 0; i < lexicalInfo.tokens.size(); ++i) {
-				const nadsad::ascii::Token token = lexicalInfo.tokens[i];
+			for (const nadsad::ascii::Token& token : lexicalInfo.tokens) {
 				serializer.beginWriteArrayElement();
 
 				serializer.beginWriteStruct();
@@ -470,12 +492,25 @@ namespace natl::serialization {
 				natls::write<Serializer, nadsad::ascii::TokenType>(serializer, "type", token.tokenType);
 				natls::write<Serializer, natl::Size>(serializer, "lineNumber", lineNumber);
 
-				if (i == 0 || i == lexicalInfo.tokens.size() - 1) {
+				switch (token.tokenType) {
+				case nadsad::ascii::TokenType::start:
+				case nadsad::ascii::TokenType::end:
 					natls::write<Serializer>(serializer, "value", "");
-				} else {
-					natl::ConstAsciiStringView value(&lexicalInfo.source[token.offset], token.size);
-					natls::write<Serializer>(serializer, "value", value);
+					break;
+				case nadsad::ascii::TokenType::leftCurly:
+					natls::write<Serializer>(serializer, "value", "{");
+					break;
+				case nadsad::ascii::TokenType::rightCurly:
+					natls::write<Serializer>(serializer, "value", "}");
+					break;
+				default:
+				{
+					natl::ConstAsciiStringView valueAsString(&lexicalInfo.source[token.offset], token.size);
+					natls::write<Serializer>(serializer, "value", valueAsString);
+					break;
 				}
+				}
+
 				serializer.endWriteStruct();
 
 				serializer.endWriteArrayElement();
