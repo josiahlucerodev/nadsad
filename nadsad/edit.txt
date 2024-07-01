@@ -1,12 +1,40 @@
-		constexpr void writeUI8(const natl::ui8 value) noexcept { 
-			natl::intToStringBinaryStringType<container_type, natl::ui8>(storage, value);
+	template<> struct Serilize<ui8> {
+		template<typename Serializer>
+		constexpr static void as(Serializer& serializer) noexcept {
+			serializer.asUI8();
 		}
-		constexpr void writeUI16(const natl::ui16 value) noexcept { 
-			natl::intToStringBinaryStringType<container_type, natl::ui16>(storage, value);
+		template<typename Serializer>
+		constexpr static void write(Serializer& serializer, const ui8 value) noexcept {
+			serializer.writeUI8(value);
 		}
-		constexpr void writeUI32(const natl::ui32 value) noexcept { 
-			natl::intToStringBinaryStringType<container_type, natl::ui32>(storage, value);
+	};
+	template<> struct Serilize<ui16> {
+		template<typename Serializer>
+		constexpr static void as(Serializer& serializer) noexcept {
+			serializer.asUI16();
 		}
-		constexpr void writeUI64(const natl::ui64 value) noexcept { 
-			natl::intToStringBinaryStringType<container_type, natl::ui64>(storage, value);
+		template<typename Serializer>
+		constexpr static void write(Serializer& serializer, const ui16 value) noexcept {
+			serializer.writeUI16(value);
 		}
+	};
+	template<> struct Serilize<ui32> {
+		template<typename Serializer>
+		constexpr static void as(Serializer& serializer) noexcept {
+			serializer.asUI32();
+		}
+		template<typename Serializer>
+		constexpr static void write(Serializer& serializer, const ui32 value) noexcept {
+			serializer.writeUI32(value);
+		}
+	};
+	template<> struct Serilize<ui64> {
+		template<typename Serializer>
+		constexpr static void as(Serializer& serializer) noexcept {
+			serializer.asUI64();
+		}
+		template<typename Serializer>
+		constexpr static void write(Serializer& serializer, const ui64 value) noexcept {
+			serializer.writeUI64(value);
+		}
+	};

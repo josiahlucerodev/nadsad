@@ -3,6 +3,9 @@ function(nadsad_Standard_Test NadsadTestName TestDir)
 #EXE
 add_executable(${NadsadTestName} ${TestDir}/main.cpp)
 
+#DEFINITIONS
+target_compile_definitions(${NadsadTestName} PRIVATE NADSAD_TEST_RESOURCE_PATH="${CMAKE_CURRENT_SOURCE_DIR}")
+
 #OPTION
 exe_emscripten_setup(${NadsadTestName} TRUE)
 

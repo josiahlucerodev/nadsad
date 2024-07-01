@@ -22,13 +22,9 @@ namespace nadsad::ascii {
 	private:
 		container_type storage;
 		natl::Size indentValue = 0;
-		natl::ui32 nextId = 1;
-		mapping_container_type idMappings;
 	public:
 		constexpr Serializer() noexcept {
 			indentValue = 0;
-			nextId = 0;
-			idMappings.resize(1);
 		}
 
 		constexpr natl::ConstAsciiStringView output() noexcept {
@@ -62,21 +58,38 @@ namespace nadsad::ascii {
 			}
 		}
 	public:
-		constexpr void beginWrite(const natl::ConstAsciiStringView name) noexcept {
-			indent();
-			storage += name;
-			storage += ' ';
+		constexpr void writeTable(const natl::Size size) noexcept {
+			storage += "table ";
+			newLine();
 		}
-		constexpr void endWrite() noexcept {
+
+		constexpr void beginWriteNamedTable(const natl::Size size) noexcept {
+			indent();
+			storage += "ntable"; 
+			space();
+			storage += '{';
+			newLine();
+			increaseIndent();
+		}
+		constexpr void endWriteTable() noexcept {
+			decreaseIndent();
+			indent();
+			storage += '}';
+		}
+		constexpr void writeNamedTableElement(const natl::ConstAsciiStringView name) noexcept {
+			indent();
+			writeStr(name);
 			storage += ',';
 			newLine();
 		}
-		constexpr void writeTagged(const natl::ConstAsciiStringView name) noexcept {
+
+		//write
+		constexpr void beginWrite(const natl::ConstAsciiStringView name) noexcept {
 			indent();
-			storage += name;
-			storage += " tagged ";
+			writeStr(name);
+			storage += ' ';
 		}
-		constexpr void endTaggedWrite() noexcept {
+		constexpr void endWrite() noexcept {
 			storage += ',';
 			newLine();
 		}
@@ -113,6 +126,8 @@ namespace nadsad::ascii {
 			space();
 		}
 		constexpr void asStruct() noexcept { storage += "struct:"; space(); }
+		constexpr void asFile() noexcept { storage += "file:"; space(); }
+		constexpr void asBlob() noexcept { storage += "blob:"; space(); }
 
 		//write
 		constexpr void writeNull(const natl::i8 value) noexcept {
@@ -165,6 +180,9 @@ namespace nadsad::ascii {
 			}
 			storage += '\'';
 		}
+		constexpr void writeStr(const natl::Ascii* str, const natl::Size size) noexcept {
+			writeStr(natl::ConstAsciiStringView(str, size));
+		}
 		constexpr void writeStr(const natl::ConstAsciiStringView str) noexcept { 
 			storage += '\"';
 
@@ -199,7 +217,7 @@ namespace nadsad::ascii {
 		}
 
 		constexpr void writeEmptyArray() noexcept {
-			storage += "{}";
+			storage += "[]";
 		}
 		constexpr void beginWriteArray() noexcept {
 			storage += '[';
@@ -219,6 +237,35 @@ namespace nadsad::ascii {
 			newLine();
 		}
 
+		constexpr void writeEmptyDic() noexcept {
+			storage += "{}";
+		}
+		constexpr void beginWritDic() noexcept {
+			storage += '{';
+			newLine();
+			increaseIndent();
+		}
+		constexpr void endWriteDic() noexcept {
+			decreaseIndent();
+			indent();
+			storage += '}';
+		}
+
+		constexpr void beginWriteDicElement() noexcept {
+			indent();
+		}
+		constexpr void endWriteDicElement() noexcept {
+			storage += ',';
+			newLine();
+		}
+
+		constexpr void writeDicKey() noexcept {}
+		constexpr void writeDicValue() noexcept {
+			storage += ':';
+			space();
+		}
+
+
 		constexpr void beginWriteStruct() noexcept {
 			storage += '{';
 			newLine();
@@ -228,6 +275,34 @@ namespace nadsad::ascii {
 			decreaseIndent();
 			indent();
 			storage += '}';
+		}
+
+		constexpr void writeFileName(const natl::ConstAsciiStringView fileName) noexcept {
+			writeStr(fileName);
+		}
+		constexpr void writeFileContent(const natl::ArrayView<const natl::Byte> data) noexcept {
+			writeBlob(data);
+		}
+
+		constexpr void writeBlob(const natl::ArrayView<const natl::Byte> data) noexcept {
+			storage += '(';
+
+			for (const natl::Byte part : data) {
+				switch (static_cast<natl::ui8>(part)) {
+				case 255:
+					storage += static_cast<natl::Ascii>(255);
+					storage += static_cast<natl::Ascii>(255);
+				case static_cast<natl::ui8>(')'):
+					storage += static_cast<natl::Ascii>(255);
+					storage += ')';
+				default:
+					storage += part;
+					break;
+				}
+			}
+
+			storage += ')';
+			newLine();
 		}
 	};
 	//serilie()
