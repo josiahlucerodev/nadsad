@@ -1,4 +1,4 @@
-	template<> struct Serilize<ui8> {
+	template<> struct Serialize<ui8> {
 		template<typename Serializer>
 		constexpr static void as(Serializer& serializer) noexcept {
 			serializer.asUI8();
@@ -8,7 +8,7 @@
 			serializer.writeUI8(value);
 		}
 	};
-	template<> struct Serilize<ui16> {
+	template<> struct Serialize<ui16> {
 		template<typename Serializer>
 		constexpr static void as(Serializer& serializer) noexcept {
 			serializer.asUI16();
@@ -18,7 +18,7 @@
 			serializer.writeUI16(value);
 		}
 	};
-	template<> struct Serilize<ui32> {
+	template<> struct Serialize<ui32> {
 		template<typename Serializer>
 		constexpr static void as(Serializer& serializer) noexcept {
 			serializer.asUI32();
@@ -28,7 +28,7 @@
 			serializer.writeUI32(value);
 		}
 	};
-	template<> struct Serilize<ui64> {
+	template<> struct Serialize<ui64> {
 		template<typename Serializer>
 		constexpr static void as(Serializer& serializer) noexcept {
 			serializer.asUI64();

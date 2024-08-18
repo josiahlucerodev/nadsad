@@ -1,3 +1,23 @@
-
-
 the file: "the/" """ """
+the struct {
+
+},
+the array [i8]: []
+dic {str, int}: {}
+
+
+
+table {
+	"x",
+	"y",
+} 
+
+nametag "vec3" numtag struct pos: {
+	
+
+	nametag "vec", numbertag ui32 8, nameid typeid "x" f32: 
+	nameid typeid "x" f32: 0.0, 
+
+	nameid typeid "y" f32: 0.0, 
+	nameid typeid "z" f32: 0.0, 
+}

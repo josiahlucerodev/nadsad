@@ -42,8 +42,9 @@ namespace nadsad::ascii {
 		keywordFile,
 
 		keywordTable,
-		keywordNtable,
-		keywordIndex,
+		keywordTag,
+		keywordNameTag,
+		keywordTypeTag,
 	};
 
 	constexpr natl::ConstAsciiStringView tokenTypeToString(const TokenType tokenType) noexcept {
@@ -112,10 +113,12 @@ namespace nadsad::ascii {
 			return "keywordFile";
 		case TokenType::keywordTable:
 			return "keywordTable";
-		case TokenType::keywordNtable:
-			return "keywordNtable";
-		case TokenType::keywordIndex:
-			return "keywordIndex";
+		case TokenType::keywordTag:
+			return "keywordTag";
+		case TokenType::keywordNameTag:
+			return "keywordNameTag";
+		case TokenType::keywordTypeTag:
+			return "keywordTypeTag";
 		default:
 			natl::unreachable();
 		}
@@ -344,10 +347,9 @@ namespace nadsad::ascii {
 
 							const natl::Ascii* identifierPtr = &character;
 							if (identifierStartIndex + 8 < source.size()) {
-								constexpr natl::Size testHash = natl::hashStringLessThan8("ntable");
 								identifierHash = natl::hashStringLessThan8Unbounded(identifierPtr, identifierSize);
 							} else {
-								identifierHash = natl::hashStringLessThan8(identifierPtr, identifierPtr + identifierSize);
+								identifierHash = natl::hashStringLessThan8(identifierPtr, identifierSize);
 							}
 
 							TokenType keywordTokenType;
@@ -412,11 +414,14 @@ namespace nadsad::ascii {
 							case natl::hashStringLessThan8("table"):
 								keywordTokenType = TokenType::keywordTable;
 								break;
-							case natl::hashStringLessThan8("ntable"):
-								keywordTokenType = TokenType::keywordNtable;
+							case natl::hashStringLessThan8("tag"):
+								keywordTokenType = TokenType::keywordTag;
 								break;
-							case natl::hashStringLessThan8("index"):
-								keywordTokenType = TokenType::keywordIndex;
+							case natl::hashStringLessThan8("nametag"):
+								keywordTokenType = TokenType::keywordNameTag;
+								break;
+							case natl::hashStringLessThan8("typetag"):
+								keywordTokenType = TokenType::keywordTypeTag;
 								break;
 							default:
 								addUnknownToken(identifierSize, identifierStartIndex);
@@ -449,18 +454,15 @@ namespace nadsad::ascii {
 	}
 
 	constexpr natl::Size findTokenLineNumber(const natl::ui64 offset, const natl::ArrayView<const natl::ui64> newLineOffsets) noexcept {
-		const natl::Size newlineIndex = natl::lowerBoundIndex(offset, newLineOffsets);
+		const natl::Size newlineIndex = natl::findLowerBoundIndex(offset, newLineOffsets);
 		return newlineIndex;
 	}
 }
 
-namespace natl::serialization {
+namespace natl {
 	template<>
-	struct Serilize<nadsad::ascii::TokenType> {
-		template<typename Serializer>
-		constexpr static void as(Serializer& serializer) noexcept {
-			serializer.asFlag();
-		}
+	struct Serialize<nadsad::ascii::TokenType> {
+		using serialize_as_type = SerializeStructType;
 		template<typename Serializer>
 		constexpr static void write(Serializer& serializer, const nadsad::ascii::TokenType tokenType) noexcept {
 			auto tokenTypeSizeToString = [](const Size value) noexcept -> ConstAsciiStringView {
@@ -471,17 +473,15 @@ namespace natl::serialization {
 	};
 
 	template<>
-	struct Serilize<nadsad::ascii::LexicalInfo> {
-		template<typename Serializer>
-		constexpr static void as(Serializer& serializer) noexcept {
-			serializer.asStruct();
-		}
+	struct Serialize<nadsad::ascii::LexicalInfo> {
+		using serialize_as_type = SerializeStructType;
 		template<typename Serializer>
 		constexpr static void write(Serializer& serializer, const nadsad::ascii::LexicalInfo& lexicalInfo) noexcept {
 			serializer.beginWriteStruct();
 			
-			serializer.beginWrite("tokens");
-			serializer.asArrayOf(natls::BasicDataType::t_struct, lexicalInfo.tokens.size());
+			serializer.beginWrite<SerializeID::none, SerializeNumberTag<natl::ui8>>("tokens", SerializeNameTag("32"), 3);
+			serializer.as<natl::SerializeArrayType<natl::SerializeStructType>>();
+			serializer.writeValue();
 
 			serializer.beginWriteArray();
 			for (const nadsad::ascii::Token& token : lexicalInfo.tokens) {
@@ -489,24 +489,24 @@ namespace natl::serialization {
 
 				serializer.beginWriteStruct();
 				const natl::Size lineNumber = nadsad::ascii::findTokenLineNumber(token.offset, lexicalInfo.newLineOffsets.toArrayView());
-				natls::write<Serializer, nadsad::ascii::TokenType>(serializer, "type", token.tokenType);
-				natls::write<Serializer, natl::Size>(serializer, "lineNumber", lineNumber);
+				serializeWrite<Serializer, nadsad::ascii::TokenType>(serializer, "type", token.tokenType);
+				serializeWrite<Serializer, natl::Size>(serializer, "lineNumber", lineNumber);
 
 				switch (token.tokenType) {
 				case nadsad::ascii::TokenType::start:
 				case nadsad::ascii::TokenType::end:
-					natls::write<Serializer>(serializer, "value", "");
+					serializeWrite<Serializer>(serializer, "value", "");
 					break;
 				case nadsad::ascii::TokenType::leftCurly:
-					natls::write<Serializer>(serializer, "value", "{");
+					serializeWrite<Serializer>(serializer, "value", "{");
 					break;
 				case nadsad::ascii::TokenType::rightCurly:
-					natls::write<Serializer>(serializer, "value", "}");
+					serializeWrite<Serializer>(serializer, "value", "}");
 					break;
 				default:
 				{
 					natl::ConstAsciiStringView valueAsString(&lexicalInfo.source[token.offset], token.size);
-					natls::write<Serializer>(serializer, "value", valueAsString);
+					serializeWrite<Serializer>(serializer, "value", valueAsString);
 					break;
 				}
 				}

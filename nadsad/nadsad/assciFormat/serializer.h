@@ -5,13 +5,10 @@
 
 //interface 
 namespace nadsad::ascii {
-	
-
 	template<
 		natl::Size smallBufferByteSize, 
-		natls::Flag SerializationFlag = natls::Flag::pretty,
-		typename Alloc = natl::DefaultAllocator<natl::Ascii>
-	>
+		natl::SerializeFlag SerializeFlag = natl::SerializeFlag::pretty,
+		typename Alloc = natl::DefaultAllocator<natl::Ascii>>
 		requires(natl::IsAllocator<Alloc>)
 	struct Serializer {
 		using allocator_type = Alloc::template rebind_alloc<natl::Ascii>;
@@ -31,29 +28,29 @@ namespace nadsad::ascii {
 			return storage.toStringView();
 		}
 		constexpr void newLine() noexcept {
-			if constexpr (SerializationFlag == natls::Flag::pretty) {
+			if constexpr (SerializeFlag == natl::SerializeFlag::pretty) {
 				storage += '\n';
 			}
 		}
 		constexpr void space() noexcept {
-			if constexpr (SerializationFlag == natls::Flag::pretty) {
+			if constexpr (SerializeFlag == natl::SerializeFlag::pretty) {
 				storage += ' ';
 			}
 		}
 		constexpr void indent() noexcept {
-			if constexpr (SerializationFlag == natls::Flag::pretty) {
+			if constexpr (SerializeFlag == natl::SerializeFlag::pretty) {
 				for (natl::Size i = 0; i < indentValue; i++) {
 					storage += '\t';
 				}
 			}
 		}
 		constexpr void increaseIndent() noexcept {
-			if constexpr (SerializationFlag == natls::Flag::pretty) {
+			if constexpr (SerializeFlag == natl::SerializeFlag::pretty) {
 				indentValue += 1;
 			}
 		}
 		constexpr void decreaseIndent() noexcept {
-			if constexpr (SerializationFlag == natls::Flag::pretty) {
+			if constexpr (SerializeFlag == natl::SerializeFlag::pretty) {
 				indentValue -= 1;
 			}
 		}
@@ -84,50 +81,162 @@ namespace nadsad::ascii {
 		}
 
 		//write
-		constexpr void beginWrite(const natl::ConstAsciiStringView name) noexcept {
-			indent();
+
+	private:
+		constexpr void beginWriteName(const natl::ConstAsciiStringView name) noexcept {
 			writeStr(name);
 			storage += ' ';
 		}
+		template<natl::SerializeID ID>
+		constexpr void beginWriteID() noexcept {
+			if constexpr ((ID & natl::SerializeID::name) != natl::SerializeID::none) {
+				storage += "nameid ";
+			}
+			if constexpr ((ID & natl::SerializeID::type) != natl::SerializeID::none) {
+				storage += "typeid ";
+			}
+		}
+		constexpr void beginWriteNameTag(const natl::SerializeNameTag& serializeNameTag) noexcept {
+			storage += "nametag ";
+			writeStr(serializeNameTag.name);
+			storage += ',';
+			space();
+		}
+		template<typename SerializeNumberTagType>
+			requires(natl::IsSerializeNumberTagC<SerializeNumberTagType>)
+		constexpr void beginWriteNumberTag(const SerializeNumberTagType& serializeNumberTag) noexcept {
+			storage += "numbertag ";
+			storage += AsTypeToStringV<typename SerializeNumberTagType::number_type>::value.c_str();
+			storage += " ";
+			storage += natl::intToStringDecimal(serializeNumberTag.number);
+			storage += ',';
+			space();
+		}
+	public:
+		constexpr void beginWrite(const natl::ConstAsciiStringView name) noexcept {
+			indent();
+			beginWriteName(name);
+		}
+		template<natl::SerializeID ID>
+		constexpr void beginWrite(const natl::ConstAsciiStringView name) noexcept {
+			indent();
+			beginWriteID<ID>();
+			beginWriteName(name);
+		}
+		template<natl::SerializeID ID>
+		constexpr void beginWrite(const natl::ConstAsciiStringView name, const natl::SerializeNameTag& serializeNameTag) noexcept {
+			indent();
+			beginWriteNameTag(serializeNameTag);
+			beginWriteID<ID>();
+			beginWriteName(name);
+		}
+		template<natl::SerializeID ID, typename SerializeNumberTagType>
+			requires(natl::IsSerializeNumberTagC<SerializeNumberTagType>)
+		constexpr void beginWrite(const natl::ConstAsciiStringView name, const SerializeNumberTagType& serializeNumberTag) noexcept {
+			indent();
+			beginWriteNumberTag<SerializeNumberTagType>(serializeNumberTag);
+			beginWriteID<ID>();
+			beginWriteName(name);
+		}
+		template<natl::SerializeID ID, typename SerializeNumberTagType>
+			requires(natl::IsSerializeNumberTagC<SerializeNumberTagType>)
+		constexpr void beginWrite(const natl::ConstAsciiStringView name, const natl::SerializeNameTag& serializeNameTag, const SerializeNumberTagType& serializeNumberTag) noexcept {
+			indent();
+			beginWriteNameTag(serializeNameTag);
+			beginWriteNumberTag<SerializeNumberTagType>(serializeNumberTag);
+			beginWriteID<ID>();
+			beginWriteName(name);
+		}
+
+
 		constexpr void endWrite() noexcept {
 			storage += ',';
 			newLine();
 		}
+		constexpr void writeValue() noexcept {
+			storage += ':';
+			space();
+		}
 
 		//as
-		constexpr void asOptional() noexcept { storage += "op "; }
-		constexpr void asI8() noexcept { storage += "i8:"; space(); }
-		constexpr void asI16() noexcept { storage += "i16:"; space(); }
-		constexpr void asI32() noexcept { storage += "i32:"; space(); }
-		constexpr void asI64() noexcept { storage += "i64:"; space(); }
-		constexpr void asUI8() noexcept { storage += "ui8:"; space(); }
-		constexpr void asUI16() noexcept { storage += "ui16:"; space(); }
-		constexpr void asUI32() noexcept { storage += "ui32:"; space(); }
-		constexpr void asUI64() noexcept { storage += "ui64:"; space(); }
-		constexpr void asF32() noexcept { storage += "f32:"; space(); }
-		constexpr void asF64() noexcept { storage += "f64:"; space(); }
-		constexpr void asChar() noexcept { storage += "char:"; space(); }
-		constexpr void asStr() noexcept { storage += "str:"; space(); }
-		constexpr void asFlag() noexcept { storage += "flag:"; space(); }
-		constexpr void asArrayOf(const natls::BasicDataType type, const natl::Size count) noexcept {
-			storage.reserve(storage.size() + (count * 16));
-			storage += "array ";
-			storage += natls::basicDataTypeToString(type);
-			storage += ':';
-			space();
+	private:
+		template<typename SerializeType>
+		struct AsTypeToStringV;
+		template<typename SerializeType>
+		constexpr static natl::TemplateStringLiteral AsTypeToString = AsTypeToStringV<SerializeType>::value;
+
+		template<> struct AsTypeToStringV<natl::i8> { 
+			constexpr static natl::TemplateStringLiteral value = "i8";
+		};
+		template<> struct AsTypeToStringV<natl::i16> { 
+			constexpr static natl::TemplateStringLiteral value = "i16";
+		};
+		template<> struct AsTypeToStringV<natl::i32> { 
+			constexpr static natl::TemplateStringLiteral value = "i32";
+		};
+		template<> struct AsTypeToStringV<natl::i64> { 
+			constexpr static natl::TemplateStringLiteral value = "i64";
+		};
+		template<> struct AsTypeToStringV<natl::ui8> { 
+			constexpr static natl::TemplateStringLiteral value = "ui8";
+		};
+		template<> struct AsTypeToStringV<natl::ui16> { 
+			constexpr static natl::TemplateStringLiteral value = "ui16";
+		};
+		template<> struct AsTypeToStringV<natl::ui32> { 
+			constexpr static natl::TemplateStringLiteral value = "ui32";
+		};
+		template<> struct AsTypeToStringV<natl::ui64> { 
+			constexpr static natl::TemplateStringLiteral value = "i64";
+		};
+		
+		template<> struct AsTypeToStringV<natl::f32> { 
+			constexpr static natl::TemplateStringLiteral value = "f32";
+		};
+		template<> struct AsTypeToStringV<natl::f64> { 
+			constexpr static natl::TemplateStringLiteral value = "f64";
+		};
+
+		template<> struct AsTypeToStringV<natl::SerializeCharType> { 
+			constexpr static natl::TemplateStringLiteral value = "char";
+		};
+		template<> struct AsTypeToStringV<natl::SerializeStrType> {
+			constexpr static natl::TemplateStringLiteral value = "str";
+		};
+		template<> struct AsTypeToStringV<natl::SerializeFlagType> {
+			constexpr static natl::TemplateStringLiteral value = "flag";
+		};
+		template<> struct AsTypeToStringV<natl::SerializeStructType> {
+			constexpr static natl::TemplateStringLiteral value = "struct";
+		};
+		template<> struct AsTypeToStringV<natl::SerializeFileType> {
+			constexpr static natl::TemplateStringLiteral value = "file";
+		};
+		template<> struct AsTypeToStringV<natl::SerializeBlobType> {
+			constexpr static natl::TemplateStringLiteral value = "blob";
+		};
+		template<typename SerializeType> struct AsTypeToStringV<natl::SerializeOptionalType<SerializeType>> {
+			constexpr static natl::TemplateStringLiteral value = natl::StringLiteral<"op ">::Concat<AsTypeToString<SerializeType>>;
+		};
+		template<typename ElementType> struct AsTypeToStringV<natl::SerializeArrayType<ElementType>> {
+			constexpr static natl::TemplateStringLiteral value = natl::StringLiteral<"array[">::Concat<AsTypeToString<ElementType>, "]">;
+		};
+		template<typename KeyType, typename ValueType> struct AsTypeToStringV<natl::SerializeDicType<KeyType, ValueType>> {
+			constexpr static natl::TemplateStringLiteral value = 
+				natl::StringLiteral<"dic{">::Concat<AsTypeToString<KeyType>, ",", AsTypeToString<ValueType>, "}">;
+		};
+
+
+		template<typename IntegerType> struct AsTypeToStringV<natl::SerializeNumberTag<IntegerType>> {
+			constexpr static natl::TemplateStringLiteral value = "blob";
+		};
+
+	public:
+		template<typename SerializeType, natl::SerializeID ID = natl::SerializeID::none>
+			requires(natl::IsSerializableC<SerializeType>)
+		constexpr void as() noexcept {
+			storage += AsTypeToStringV<SerializeType>::value.c_str();
 		}
-		constexpr void asDicOf(const natls::BasicDataType key, const natls::BasicDataType value, const natl::Size count) noexcept {
-			storage.reserve(storage.size() + (count * 16));
-			storage += "dic ";
-			storage += natls::basicDataTypeToString(key);
-			storage += ' ';
-			storage += natls::basicDataTypeToString(value);
-			storage += ':';
-			space();
-		}
-		constexpr void asStruct() noexcept { storage += "struct:"; space(); }
-		constexpr void asFile() noexcept { storage += "file:"; space(); }
-		constexpr void asBlob() noexcept { storage += "blob:"; space(); }
 
 		//write
 		constexpr void writeNull(const natl::i8 value) noexcept {
@@ -209,7 +318,7 @@ namespace nadsad::ascii {
 			natl::intToStringDecimalStringType<container_type, natl::Size>(storage, value);
 		}
 		template<typename Functor>
-			requires(natls::IsToFlagConvertFunctor<Functor>)
+			requires(natl::IsToFlagConvertFunctor<Functor>)
 		constexpr void writeFlag(const natl::Size value, Functor&& toFlagFunction) noexcept {
 			storage += '\"';
 			storage += toFlagFunction(value);

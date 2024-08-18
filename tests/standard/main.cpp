@@ -24,8 +24,8 @@ int main() noexcept {
 		const natl::ConstAsciiStringView source = fileContents.toStringView();
 		lexicalInfo = nadsad::ascii::lexicalAnalysis(source);
 	}
-
-	nadsad::ascii::Serializer<1000, natls::Flag::pretty> serializer{};
-	natls::write(serializer, "lexical", lexicalInfo);
+	natl::concatTemplateStringLiterals<"32 ", "42">();
+	nadsad::ascii::Serializer<1000, natl::SerializeFlag::pretty> serializer{};
+	natl::serializeWrite(serializer, "lexical", lexicalInfo);
 	natl::println(serializer.output());
 }
