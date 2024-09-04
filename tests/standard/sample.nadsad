@@ -1,7 +1,3 @@
-ntable {
-	"the"
-}      
-"pos" struct: {
-	index "x" ui32: 1111,
-	index "y" ui32: 1111,
-},
+index {
+
+}

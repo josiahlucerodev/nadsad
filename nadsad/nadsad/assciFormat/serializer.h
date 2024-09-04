@@ -55,14 +55,9 @@ namespace nadsad::ascii {
 			}
 		}
 	public:
-		constexpr void writeTable(const natl::Size size) noexcept {
+		constexpr void beginWriteTable(const natl::Size size) noexcept {
 			storage += "table ";
 			newLine();
-		}
-
-		constexpr void beginWriteNamedTable(const natl::Size size) noexcept {
-			indent();
-			storage += "ntable"; 
 			space();
 			storage += '{';
 			newLine();
@@ -73,13 +68,19 @@ namespace nadsad::ascii {
 			indent();
 			storage += '}';
 		}
-		constexpr void writeNamedTableElement(const natl::ConstAsciiStringView name) noexcept {
+		constexpr natl::ui64 writeTableElement(const natl::ConstAsciiStringView name, const natl::ui64 id) noexcept {
 			indent();
 			writeStr(name);
 			storage += ',';
 			newLine();
 		}
-
+		constexpr void saveIndex(const natl::ui64 indexId, const natl::ConstAsciiStringView name) noexcept {
+			indent();
+			natl::intToStringDecimal(storage, indexId);
+			writeStr(name);
+			storage += ';';
+			newLine();
+;		}
 		//write
 
 	private:
@@ -243,34 +244,34 @@ namespace nadsad::ascii {
 			storage += "null";
 		}
 		constexpr void writeI8(const natl::i8 value) noexcept { 
-			natl::intToStringDecimalStringType<container_type, natl::i8>(storage, value);
+			natl::intToStringDecimal<container_type, natl::i8>(storage, value);
 		}
 		constexpr void writeI16(const natl::i16 value) noexcept { 
-			natl::intToStringDecimalStringType<container_type, natl::i16>(storage, value);
+			natl::intToStringDecimal<container_type, natl::i16>(storage, value);
 		}
 		constexpr void writeI32(const natl::i32 value) noexcept { 
-			natl::intToStringDecimalStringType<container_type, natl::i32>(storage, value);
+			natl::intToStringDecimal<container_type, natl::i32>(storage, value);
 		}
 		constexpr void writeI64(const natl::i64 value) noexcept { 
-			natl::intToStringDecimalStringType<container_type, natl::i64>(storage, value);
+			natl::intToStringDecimal<container_type, natl::i64>(storage, value);
 		}
 		constexpr void writeUI8(const natl::ui8 value) noexcept {
-			natl::intToStringDecimalStringType<container_type, natl::ui8>(storage, value);
+			natl::intToStringDecimal<container_type, natl::ui8>(storage, value);
 		}
 		constexpr void writeUI16(const natl::ui16 value) noexcept {
-			natl::intToStringDecimalStringType<container_type, natl::ui16>(storage, value);
+			natl::intToStringDecimal<container_type, natl::ui16>(storage, value);
 		}
 		constexpr void writeUI32(const natl::ui32 value) noexcept {
-			natl::intToStringDecimalStringType<container_type, natl::ui32>(storage, value);
+			natl::intToStringDecimal<container_type, natl::ui32>(storage, value);
 		}
 		constexpr void writeUI64(const natl::ui64 value) noexcept {
-			natl::intToStringDecimalStringType<container_type, natl::ui64>(storage, value);
+			natl::intToStringDecimal<container_type, natl::ui64>(storage, value);
 		}
 		constexpr void writeF32(const natl::f32 value) noexcept {
-			natl::floatToStringStringType<container_type, natl::f32>(storage, value);
+			natl::floatToStringDecimal<container_type, natl::f32>(storage, value);
 		}
 		constexpr void writeF64(const natl::f64 value) noexcept {
-			natl::floatToStringStringType<container_type, natl::f32>(storage, value);
+			natl::floatToStringDecimal<container_type, natl::f32>(storage, value);
 		}
 		constexpr void writeChar(const natl::Char value) noexcept { 
 			storage += '\'';
@@ -315,7 +316,7 @@ namespace nadsad::ascii {
 		}
 
 		constexpr void writeFlag(const natl::Size value) noexcept {
-			natl::intToStringDecimalStringType<container_type, natl::Size>(storage, value);
+			natl::intToStringDecimal<container_type, natl::Size>(storage, value);
 		}
 		template<typename Functor>
 			requires(natl::IsToFlagConvertFunctor<Functor>)
