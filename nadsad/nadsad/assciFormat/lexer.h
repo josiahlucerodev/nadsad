@@ -1038,7 +1038,9 @@ namespace nadsad::ascii {
 		outputDst.reserve(outputDst.size() + 100);
 		switch (lexicalError.type) {
 		case LexicalErrorType::unknownToken:
-			
+			natl::formatTo();
+			outputDst.append("unknown token at ");
+
 		case LexicalErrorType::inputToBig:
 
 		case LexicalErrorType::unknownIdentifer:
@@ -1060,7 +1062,7 @@ namespace nadsad::ascii {
 		case LexicalErrorType::unknownLiteralPostExt:
 			break;
 		default:
-			break;
+			natl::unreachable();
 		}
 	}
 }
