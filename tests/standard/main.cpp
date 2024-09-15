@@ -7,7 +7,7 @@
 
 int main() noexcept {
 	natl::Path testFilePath = nadsad::getTestResourcePath();
-	testFilePath /= "standard/sample.nadsad";
+	testFilePath /= "standard/integer.nadsad";
 
 	natl::File testFile(testFilePath.c_str(), natl::FileOpenMode::readStart);
 	natl::StringByteSize<10000> fileContents;
@@ -24,7 +24,6 @@ int main() noexcept {
 		const natl::ConstAsciiStringView source = fileContents.toStringView();
 		lexicalInfo = nadsad::ascii::lexicalAnalysis(source);
 	}
-	natl::concatTemplateStringLiterals<"32 ", "42">();
 	nadsad::ascii::Serializer<1000, natl::SerializeFlag::pretty> serializer{};
 	natl::serializeWriteNamed(serializer, "lexical", lexicalInfo);
 	natl::println(serializer.output());

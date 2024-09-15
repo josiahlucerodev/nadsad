@@ -37,10 +37,10 @@ namespace nadsad::ascii {
 		binaryFloatWithType,
 
 		keywordOp,
-		keywordU8,
-		keywordU16,
-		keywordU32,
-		keywordU64,
+		keywordI8,
+		keywordI16,
+		keywordI32,
+		keywordI64,
 		keywordUI8,
 		keywordUI16,
 		keywordUI32,
@@ -116,14 +116,14 @@ namespace nadsad::ascii {
 			return "binaryFloatWithType";
 		case TokenType::keywordOp:
 			return "keywordOp";
-		case TokenType::keywordU8:
-			return "keywordU8";
-		case TokenType::keywordU16:
-			return "keywordU16";
-		case TokenType::keywordU32:
-			return "keywordU32";
-		case TokenType::keywordU64:
-			return "keywordU64";
+		case TokenType::keywordI8:
+			return "keywordI8";
+		case TokenType::keywordI16:
+			return "keywordI16";
+		case TokenType::keywordI32:
+			return "keywordI32";
+		case TokenType::keywordI64:
+			return "keywordI64";
 		case TokenType::keywordUI8:
 			return "keywordUI8";
 		case TokenType::keywordUI16:
@@ -320,6 +320,7 @@ namespace nadsad::ascii {
 			lexicalInfo.tokens.reserve((source.size() >> 5) + 100); //expect a token every 8 characters
 			lexicalInfo.newLineOffsets.reserve((source.size() >> 3) + 100); //expect a newline every 32 characters
 			lexicalInfo.tokens.push_back(Token{ TokenType::start, 0 });
+			lexicalInfo.newLineOffsets.push_back(0);
 
 			return true;
 		}
@@ -542,17 +543,17 @@ namespace nadsad::ascii {
 			case natl::hashStringLessThan8("op"):
 				keywordTokenType = TokenType::keywordOp;
 				break;
-			case natl::hashStringLessThan8("u8"):
-				keywordTokenType = TokenType::keywordU8;
+			case natl::hashStringLessThan8("i8"):
+				keywordTokenType = TokenType::keywordI8;
 				break;
-			case natl::hashStringLessThan8("u16"):
-				keywordTokenType = TokenType::keywordU16;
+			case natl::hashStringLessThan8("i16"):
+				keywordTokenType = TokenType::keywordI16;
 				break;
-			case natl::hashStringLessThan8("u32"):
-				keywordTokenType = TokenType::keywordU32;
+			case natl::hashStringLessThan8("i32"):
+				keywordTokenType = TokenType::keywordI32;
 				break;
-			case natl::hashStringLessThan8("u64"):
-				keywordTokenType = TokenType::keywordU64;
+			case natl::hashStringLessThan8("i64"):
+				keywordTokenType = TokenType::keywordI64;
 				break;
 			case natl::hashStringLessThan8("ui8"):
 				keywordTokenType = TokenType::keywordUI8;
@@ -1026,42 +1027,191 @@ namespace nadsad::ascii {
 	constexpr LexicalInfo lexicalAnalysis(const natl::ConstAsciiStringView source, const natl::Bool enableFastIndexing = true) noexcept {
 		return LexicalAnalysisRunner().run(source, enableFastIndexing);
 	}
+	constexpr natl::Size findTokenColumnNumber(
+		const natl::Size tokenOffset, 
+		const natl::Size lineNumber, 
+		const natl::ArrayView<const natl::ui64> newLineOffsets) noexcept {
+		if (!natl::isInRange(newLineOffsets, lineNumber)) {
+			return 0;
+		}
+		return newLineOffsets[lineNumber] - tokenOffset;
+	}
 
 	constexpr natl::Size findTokenLineNumber(const natl::ui64 offset, const natl::ArrayView<const natl::ui64> newLineOffsets) noexcept {
 		const natl::Size newlineIndex = natl::findLowerBoundIndex(offset, newLineOffsets);
 		return newlineIndex;
 	}
 
+	constexpr natl::ConstAsciiStringView getViewOfTokenSource(const Token& token, const LexicalInfo& lexicalInfo) noexcept {
+		return natl::ConstAsciiStringView(lexicalInfo.source.subview(token.offset, token.size));
+	}
+
 	template<typename DynStringContainer>
 		requires(natl::IsConvertDynStringContainer<DynStringContainer>)
-	constexpr void lexicalErrorToMessage(DynStringContainer& outputDst, LexicalError& lexicalError, const natl::ArrayView<const Token>& tokens) noexcept {
+	constexpr void formatTokenAtToBack(DynStringContainer& outputDst, const Token& token, const LexicalInfo& lexicalInfo) {
+		const natl::Size lineNumber = findTokenLineNumber(token.offset, lexicalInfo.newLineOffsets.toArrayView());
+		const natl::Size columnNumber = findTokenColumnNumber(token.offset, lineNumber, lexicalInfo.newLineOffsets.toArrayView());
+		natl::formatToBack(outputDst, "(line: ", lineNumber, ", column: ", columnNumber, ")");
+	}
+
+	constexpr natl::ConstAsciiStringView literalPreExtTypeToErrorString(LiteralPreExtType type) noexcept {
+		switch (type) {
+		case nadsad::ascii::LiteralPreExtType::decimalInteger:
+			return "decimal integer";
+		case nadsad::ascii::LiteralPreExtType::hexadecimalInteger:
+			return "hexadecimal integer";
+		case nadsad::ascii::LiteralPreExtType::binaryInteger:
+			return "binary integer";
+		case nadsad::ascii::LiteralPreExtType::decimalFloat:
+			return "decimal float";
+		case nadsad::ascii::LiteralPreExtType::hexadecimalFloat:
+			return "hexadecimal float";
+		case nadsad::ascii::LiteralPreExtType::binaryFloat:
+			return "binary float";
+		default:
+			natl::unreachable();
+		}
+	}
+
+	template<typename DynStringContainer>
+		requires(natl::IsConvertDynStringContainer<DynStringContainer>)
+	constexpr natl::Bool lexicalErrorToMessage(DynStringContainer& outputDst, const LexicalError& lexicalError, const LexicalInfo& lexicalInfo) noexcept {
 		outputDst.reserve(outputDst.size() + 100);
 		switch (lexicalError.type) {
-		case LexicalErrorType::unknownToken:
-			natl::formatTo();
-			outputDst.append("unknown token at ");
+		break; case LexicalErrorType::unknownToken: {
+			const natl::ui64 tokenIndex = lexicalError.unknownToken.tokenIndex;
+			if (not natl::isInRange(lexicalInfo.tokens, tokenIndex)) {
+				return false;
+			}
+			const Token& token = lexicalInfo.tokens[tokenIndex];
 
-		case LexicalErrorType::inputToBig:
+			natl::formatToBack(outputDst, "unknown token at");
+			formatTokenAtToBack<DynStringContainer>(outputDst, token, lexicalInfo);
+			natl::formatToBack(outputDst, " with value of ", getViewOfTokenSource(token, lexicalInfo));
+			return true;
+		}
+		break; case LexicalErrorType::inputToBig: 
+			natl::formatToBack(outputDst, "input was too big");
+			return true;
+		break; case LexicalErrorType::unknownIdentifer: {
+			const natl::ui64 tokenIndex = lexicalError.unknownToken.tokenIndex;
+			if (not natl::isInRange(lexicalInfo.tokens, tokenIndex)) {
+				return false;
+			}
+			const Token& token = lexicalInfo.tokens[tokenIndex];
 
-		case LexicalErrorType::unknownIdentifer:
+			natl::formatToBack(outputDst, "unknown identifer at");
+			formatTokenAtToBack<DynStringContainer>(outputDst, token, lexicalInfo);
+			natl::formatToBack(outputDst, " with value of ", getViewOfTokenSource(token, lexicalInfo));
+			return true;
+		}
+		break; case LexicalErrorType::unknownLiteralExtention: {
+			const natl::ui64 tokenIndex = lexicalError.unknownLiteralExtention.tokenIndex;
+			if (not natl::isInRange(lexicalInfo.tokens, tokenIndex)) {
+				return false;
+			}
+			const Token& token = lexicalInfo.tokens[tokenIndex];
 
-		case LexicalErrorType::unknownLiteralExtention:
+			natl::formatToBack(outputDst, "literal of type ", 
+				literalPreExtTypeToErrorString(lexicalError.unknownLiteralExtention.literalType),
+				" with unknown literal extention at");
+			formatTokenAtToBack<DynStringContainer>(outputDst, token, lexicalInfo);
+			natl::formatToBack(outputDst, " with value of ", getViewOfTokenSource(token, lexicalInfo),
+				"with extenstion of ", getViewOfTokenSource(token, lexicalInfo).substr(lexicalError.unknownLiteralExtention.extentionOffset));
+			return true;
+		}
+		break; case LexicalErrorType::unknownLiteralPreExt: {
+			const natl::ui64 tokenIndex = lexicalError.unknownLiteralPreExt.tokenIndex;
+			if (not natl::isInRange(lexicalInfo.tokens, tokenIndex)) {
+				return false;
+			}
+			const Token& token = lexicalInfo.tokens[tokenIndex];
 
-		case LexicalErrorType::unknownLiteralPreExt:
+			natl::formatToBack(outputDst, "unknown literal pre extention at ");
+			formatTokenAtToBack<DynStringContainer>(outputDst, token, lexicalInfo);
+			natl::formatToBack(outputDst, " with value of ", getViewOfTokenSource(token, lexicalInfo),
+				"with extenstion of ", getViewOfTokenSource(token, lexicalInfo).substr(lexicalError.unknownLiteralPreExt.literalPreExtEndIndex));
+			return true;
+		}
+		break; case LexicalErrorType::expectedHashAtLiteralPreExtEnd: {
+			const natl::ui64 tokenIndex = lexicalError.expectedHashAtLiteralPreExtEnd.tokenIndex;
+			if (not natl::isInRange(lexicalInfo.tokens, tokenIndex)) {
+				return false;
+			}
+			const Token& token = lexicalInfo.tokens[tokenIndex];
 
-		case LexicalErrorType::expectedHashAtLiteralPreExtEnd:
+			natl::formatToBack(outputDst, "expected hash at the literal pre end at");
+			formatTokenAtToBack<DynStringContainer>(outputDst, token, lexicalInfo);
+			natl::formatToBack(outputDst, " with value of ", getViewOfTokenSource(token, lexicalInfo));
+			return true;
+		}
+		break; case LexicalErrorType::expectedDigitsAfterLiteralExt: {
+			const natl::ui64 tokenIndex = lexicalError.expectedDigitsAfterLiteralExt.tokenIndex;
+			if (not natl::isInRange(lexicalInfo.tokens, tokenIndex)) {
+				return false;
+			}
+			const Token& token = lexicalInfo.tokens[tokenIndex];
 
-		case LexicalErrorType::expectedDigitsAfterLiteralExt:
+			natl::formatToBack(outputDst, "expected digits after literal ext at ");
+			formatTokenAtToBack<DynStringContainer>(outputDst, token, lexicalInfo);
+			natl::formatToBack(outputDst, " with value of ", getViewOfTokenSource(token, lexicalInfo));
+			return true;
+		}
+		break; case LexicalErrorType::expectedDigitsAfterFloatDot: {
+			const natl::ui64 tokenIndex = lexicalError.expectedDigitsAfterFloatDot.tokenIndex;
+			if (not natl::isInRange(lexicalInfo.tokens, tokenIndex)) {
+				return false;
+			}
+			const Token& token = lexicalInfo.tokens[tokenIndex];
 
-		case LexicalErrorType::expectedDigitsAfterFloatDot:
+			natl::formatToBack(outputDst, "expected digits after float dot from literal of type ",
+				literalPreExtTypeToErrorString(lexicalError.expectedDigitsAfterFloatDot.literalType), " at ");
+			formatTokenAtToBack<DynStringContainer>(outputDst, token, lexicalInfo);
+			natl::formatToBack(outputDst, " with value of ", getViewOfTokenSource(token, lexicalInfo));
+			return true;
+		}
+		break; case LexicalErrorType::expectedDigitsAfterFloatExp: {
+			const natl::ui64 tokenIndex = lexicalError.expectedDigitsAfterFloatExp.tokenIndex;
+			if (not natl::isInRange(lexicalInfo.tokens, tokenIndex)) {
+				return false;
+			}
+			const Token& token = lexicalInfo.tokens[tokenIndex];
 
-		case LexicalErrorType::expectedDigitsAfterFloatExp:
+			natl::formatToBack(outputDst, "expected digits after float exp from literal of type ",
+				literalPreExtTypeToErrorString(lexicalError.expectedDigitsAfterFloatExp.literalType), " at ");
+			formatTokenAtToBack<DynStringContainer>(outputDst, token, lexicalInfo);
+			natl::formatToBack(outputDst, " with value of ", getViewOfTokenSource(token, lexicalInfo));
+			return true;
+		}
+		break; case LexicalErrorType::expectedIdentiferAfterLiteralPostExtStart: {
+			const natl::ui64 tokenIndex = lexicalError.expectedIdentiferAfterLiteralPostExtStart.tokenIndex;
+			if (not natl::isInRange(lexicalInfo.tokens, tokenIndex)) {
+				return false;
+			}
+			const Token& token = lexicalInfo.tokens[tokenIndex];
 
-		case LexicalErrorType::expectedIdentiferAfterLiteralPostExtStart:
+			natl::formatToBack(outputDst, "expected identifer after literal post ext start from literal of type ",
+				literalPreExtTypeToErrorString(lexicalError.expectedIdentiferAfterLiteralPostExtStart.literalType), " at ");
+			formatTokenAtToBack<DynStringContainer>(outputDst, token, lexicalInfo);
+			natl::formatToBack(outputDst, " with value of ", getViewOfTokenSource(token, lexicalInfo));
+			return true;
+		}
+		break; case LexicalErrorType::unknownLiteralPostExt: {
+			const natl::ui64 tokenIndex = lexicalError.unknownLiteralPostExt.tokenIndex;
+			if (not natl::isInRange(lexicalInfo.tokens, tokenIndex)) {
+				return false;
+			}
+			const Token& token = lexicalInfo.tokens[tokenIndex];
 
-		case LexicalErrorType::unknownLiteralPostExt:
-			break;
-		default:
+			natl::formatToBack(outputDst, "unknown literal post ext \"", 
+				getViewOfTokenSource(token, lexicalInfo).substr(lexicalError.unknownLiteralPostExt.literalPostExtStartOffset),
+				"\" from literal of type ",
+				literalPreExtTypeToErrorString(lexicalError.unknownLiteralPostExt.literalType), " at ");
+			formatTokenAtToBack<DynStringContainer>(outputDst, token, lexicalInfo);
+			natl::formatToBack(outputDst, " with value of ", getViewOfTokenSource(token, lexicalInfo));
+			return true;
+		}
+		break; default:
 			natl::unreachable();
 		}
 	}
@@ -1087,8 +1237,12 @@ namespace natl {
 		constexpr static void write(Serializer& serializer, const nadsad::ascii::Token& token, const nadsad::ascii::LexicalInfo& lexicalInfo) noexcept {
 			serializer.beginWriteStruct();
 			const natl::Size lineNumber = nadsad::ascii::findTokenLineNumber(token.offset, lexicalInfo.newLineOffsets.toArrayView());
+			const natl::Size columnNumber = nadsad::ascii::findTokenColumnNumber(token.offset, lineNumber, lexicalInfo.newLineOffsets.toArrayView());
+
 			serializeWriteNamed<Serializer, nadsad::ascii::TokenType>(serializer, "type", token.tokenType);
 			serializeWriteNamed<Serializer, natl::Size>(serializer, "lineNumber", lineNumber);
+			serializeWriteNamed<Serializer, natl::Size>(serializer, "columnNumber", columnNumber);
+			serializeWriteNamed<Serializer, natl::Size>(serializer, "offset", token.offset);
 
 			switch (token.tokenType) {
 			case nadsad::ascii::TokenType::start:
@@ -1132,23 +1286,58 @@ namespace natl {
 	};
 
 	template<>
+	struct Serialize<nadsad::ascii::LexicalError> {
+		using serialize_as_type = SerializeStructType;
+		template<typename Serializer>
+		constexpr static void write(Serializer& serializer, const nadsad::ascii::LexicalError& lexicalError, const nadsad::ascii::LexicalInfo& lexicalInfo) noexcept {
+			natl::String errorMessage;
+			if (nadsad::ascii::lexicalErrorToMessage(errorMessage, lexicalError, lexicalInfo)) {
+				serializer.beginWriteStruct();
+				serializeWriteNamed<Serializer>(serializer, "message", errorMessage.toStringView());
+				serializer.endWriteStruct();
+			}
+		}
+	};
+
+	template<>
 	struct Serialize<nadsad::ascii::LexicalInfo> {
 		using serialize_as_type = SerializeStructType;
 		template<typename Serializer>
 		constexpr static void write(Serializer& serializer, const nadsad::ascii::LexicalInfo& lexicalInfo) noexcept {
 			serializer.beginWriteStruct();
 			
+			serializer.beginWrite<SerializeID::none>("errors");
+			serializer.as<natl::SerializeArrayType<natl::SerializeStructType>>();
+
+			serializer.writeValue();
+			if (lexicalInfo.errors.empty()) {
+				serializer.writeEmptyArray();
+			} else {
+				serializer.beginWriteArray();
+				for (const nadsad::ascii::LexicalError& lexicalError : lexicalInfo.errors) {
+					serializer.beginWriteArrayElement();
+					serializeWrite<Serializer, nadsad::ascii::LexicalError>(serializer, lexicalError, lexicalInfo);
+					serializer.endWriteArrayElement();
+				}
+				serializer.endWriteArray();
+			}
+			serializer.endWrite();
+
 			serializer.beginWrite<SerializeID::none>("tokens");
 			serializer.as<natl::SerializeArrayType<natl::SerializeStructType>>();
-			serializer.writeValue();
 
-			serializer.beginWriteArray();
-			for (const nadsad::ascii::Token& token : lexicalInfo.tokens) {
-				serializer.beginWriteArrayElement();
-				serializeWrite<Serializer, nadsad::ascii::Token>(serializer, token, lexicalInfo);
-				serializer.endWriteArrayElement();
+			serializer.writeValue();
+			if (lexicalInfo.tokens.isEmpty()) {
+				serializer.writeEmptyArray();
+			} else {
+				serializer.beginWriteArray();
+				for (const nadsad::ascii::Token& token : lexicalInfo.tokens) {
+					serializer.beginWriteArrayElement();
+					serializeWrite<Serializer, nadsad::ascii::Token>(serializer, token, lexicalInfo);
+					serializer.endWriteArrayElement();
+				}
+				serializer.endWriteArray();
 			}
-			serializer.endWriteArray();
 			serializer.endWrite();
 
 			serializer.endWriteStruct();

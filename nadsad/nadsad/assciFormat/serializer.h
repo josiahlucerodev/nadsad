@@ -227,7 +227,6 @@ namespace nadsad::ascii {
 				natl::StringLiteral<"dic{">::Concat<AsTypeToString<KeyType>, ",", AsTypeToString<ValueType>, "}">;
 		};
 
-
 		template<typename IntegerType> struct AsTypeToStringV<natl::SerializeNumberTag<IntegerType>> {
 			constexpr static natl::TemplateStringLiteral value = "blob";
 		};
