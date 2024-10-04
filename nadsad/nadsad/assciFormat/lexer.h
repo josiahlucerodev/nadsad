@@ -36,7 +36,6 @@ namespace nadsad::ascii {
 		hexadecimalFloatWithType,
 		binaryFloatWithType,
 
-		keywordOp,
 		keywordI8,
 		keywordI16,
 		keywordI32,
@@ -47,19 +46,23 @@ namespace nadsad::ascii {
 		keywordUI64,
 		keywordF32,
 		keywordF64,
+		keywordBool,
 		keywordStr,
 		keywordChar,
-		keywordFlag,
+		keywordBlob,
+		keywordFile,
+		keywordOp,
+		keywordEnum,
+		keywordFarray,
 		keywordArray,
 		keywordDic,
 		keywordStruct,
-		keywordBlob,
-		keywordFile,
-
+		keywordVariant,
 		keywordTable,
-		keywordTag,
-		keywordNameTag,
-		keywordTypeTag,
+		keywordIndex,
+
+		keywordTrue,
+		keywordFalse
 	};
 
 	constexpr natl::ConstAsciiStringView tokenTypeToString(const TokenType tokenType) noexcept {
@@ -114,8 +117,6 @@ namespace nadsad::ascii {
 			return "hexadecimalFloatWithType";
 		case TokenType::binaryFloatWithType:
 			return "binaryFloatWithType";
-		case TokenType::keywordOp:
-			return "keywordOp";
 		case TokenType::keywordI8:
 			return "keywordI8";
 		case TokenType::keywordI16:
@@ -136,30 +137,147 @@ namespace nadsad::ascii {
 			return "keywordF32";
 		case TokenType::keywordF64:
 			return "keywordF64";
+		case TokenType::keywordBool:
+			return "keywordBool";
 		case TokenType::keywordStr:
 			return "keywordStr";
 		case TokenType::keywordChar:
 			return "keywordChar";
-		case TokenType::keywordArray:
-			return "keywordArray";
-		case TokenType::keywordFlag:
-			return "keywordFlag";
-		case TokenType::keywordDic:
-			return "keywordDic";
-		case TokenType::keywordStruct:
-			return "keywordStruct";
 		case TokenType::keywordBlob:
 			return "keywordBlob";
 		case TokenType::keywordFile:
 			return "keywordFile";
+		case TokenType::keywordFarray:
+			return "keywordFarray";
+		case TokenType::keywordArray:
+			return "keywordArray";
+		case TokenType::keywordOp:
+			return "keywordOp";
+		case TokenType::keywordEnum:
+			return "keywordEnum";
+		case TokenType::keywordDic:
+			return "keywordDic";
+		case TokenType::keywordStruct:
+			return "keywordStruct";
+		case TokenType::keywordVariant:
+			return "keywordVariant";
 		case TokenType::keywordTable:
 			return "keywordTable";
-		case TokenType::keywordTag:
-			return "keywordTag";
-		case TokenType::keywordNameTag:
-			return "keywordNameTag";
-		case TokenType::keywordTypeTag:
-			return "keywordTypeTag";
+		case TokenType::keywordIndex:
+			return "keywordIndex";
+		case TokenType::keywordTrue:
+			return "keywordTrue";
+		case TokenType::keywordFalse:
+			return "keywordFalse";
+		default:
+			natl::unreachable();
+		}
+	}
+
+	constexpr natl::ConstAsciiStringView tokenTypeToDebugString(const TokenType tokenType) noexcept {
+		switch (tokenType) {
+		case TokenType::unknown:
+			return "unknown";
+		case TokenType::start:
+			return "start";
+		case TokenType::end:
+			return "end";
+		case TokenType::colon:
+			return "colon :";
+		case TokenType::simicolon:
+			return "simicolon ;";
+		case TokenType::comma:
+			return "comma ,";
+		case TokenType::leftCurly:
+			return "left curly {";
+		case TokenType::rightCurly:
+			return "right curly }";
+		case TokenType::leftSquare:
+			return "left square [";
+		case TokenType::rightSquare:
+			return "right square ]";
+		case TokenType::charLiteral:
+			return "char literal";
+		case TokenType::stringLiteral:
+			return "string literal";
+		case TokenType::dataStorage:
+			return "data storage";
+		case TokenType::decimalInteger:
+			return "decimal integer";
+		case TokenType::hexadecimalInteger:
+			return "hexadecimal integer";
+		case TokenType::binaryInteger:
+			return "binary integer";
+		case TokenType::decimalFloat:
+			return "decimal float";
+		case TokenType::hexadecimalFloat:
+			return "hexadecimal float";
+		case TokenType::binaryFloat:
+			return "binary float";
+		case TokenType::decimalIntegerWithType:
+			return "decimal integer with type";
+		case TokenType::hexadecimalIntegerWithType:
+			return "hexadecimal integer with type";
+		case TokenType::binaryIntegerWithType:
+			return "binary integer with yype";
+		case TokenType::decimalFloatWithType:
+			return "decimal float with yype";
+		case TokenType::hexadecimalFloatWithType:
+			return "hexadecimal float with type";
+		case TokenType::binaryFloatWithType:
+			return "binary float with type";
+		case TokenType::keywordI8:
+			return "keyword i8";
+		case TokenType::keywordI16:
+			return "keyword i16";
+		case TokenType::keywordI32:
+			return "keyword i32";
+		case TokenType::keywordI64:
+			return "keyword i64";
+		case TokenType::keywordUI8:
+			return "keyword ui8";
+		case TokenType::keywordUI16:
+			return "keyword ui16";
+		case TokenType::keywordUI32:
+			return "keyword ui32";
+		case TokenType::keywordUI64:
+			return "keyword ui64";
+		case TokenType::keywordF32:
+			return "keyword f32";
+		case TokenType::keywordF64:
+			return "keyword f64";
+		case TokenType::keywordBool:
+			return "keyword bool";
+		case TokenType::keywordStr:
+			return "keyword str";
+		case TokenType::keywordChar:
+			return "keyword char";
+		case TokenType::keywordFarray:
+			return "keyword farray";
+		case TokenType::keywordArray:
+			return "keyword array";
+		case TokenType::keywordOp:
+			return "keyword op";
+		case TokenType::keywordEnum:
+			return "keyword enum";
+		case TokenType::keywordDic:
+			return "keyword dic";
+		case TokenType::keywordBlob:
+			return "keyword blob";
+		case TokenType::keywordFile:
+			return "keyword file";
+		case TokenType::keywordStruct:
+			return "keyword struct";
+		case TokenType::keywordVariant:
+			return "keyword variant";
+		case TokenType::keywordTable:
+			return "keyword table";
+		case TokenType::keywordIndex:
+			return "keyword index";
+		case TokenType::keywordTrue:
+			return "keyword true";
+		case TokenType::keywordFalse:
+			return "keyword false";
 		default:
 			natl::unreachable();
 		}
@@ -175,10 +293,45 @@ namespace nadsad::ascii {
 		ui32,
 		ui64,
 	};
+	constexpr natl::ConstAsciiStringView literalPostExtIntTypeToString(const LiteralPostExtIntType& intType) noexcept {
+		switch(intType) {
+		case LiteralPostExtIntType::i8:
+			return "i8";
+		case LiteralPostExtIntType::i16:
+			return "i16";
+		case LiteralPostExtIntType::i32:
+			return "i32";
+		case LiteralPostExtIntType::i64:
+			return "i64";
+		case LiteralPostExtIntType::ui8:
+			return "ui8";
+		case LiteralPostExtIntType::ui16:
+			return "ui16";
+		case LiteralPostExtIntType::ui32:
+			return "ui32";
+		case LiteralPostExtIntType::ui64:
+			return "ui64";
+		default:
+			natl::unreachable();
+		}
+		
+	}
+
 	enum class LiteralPostExtFloatType : natl::ui8 {
 		f32,
 		f64,
 	};
+
+	constexpr natl::ConstAsciiStringView literalPostExtFloatTypeToString(const LiteralPostExtFloatType& floatType) noexcept {
+		switch (floatType) {
+		case LiteralPostExtFloatType::f32:
+			return "f32";
+		case LiteralPostExtFloatType::f64:
+			return "f64";
+		default:
+			natl::unreachable();
+		}
+	}
 
 	struct TokenWithPostExtIntType {
 		natl::ui64 tokenType : 8;
@@ -320,7 +473,6 @@ namespace nadsad::ascii {
 			lexicalInfo.tokens.reserve((source.size() >> 5) + 100); //expect a token every 8 characters
 			lexicalInfo.newLineOffsets.reserve((source.size() >> 3) + 100); //expect a newline every 32 characters
 			lexicalInfo.tokens.push_back(Token{ TokenType::start, 0 });
-			lexicalInfo.newLineOffsets.push_back(0);
 
 			return true;
 		}
@@ -540,9 +692,6 @@ namespace nadsad::ascii {
 
 			TokenType keywordTokenType;
 			switch (identifierHash) {
-			case natl::hashStringLessThan8("op"):
-				keywordTokenType = TokenType::keywordOp;
-				break;
 			case natl::hashStringLessThan8("i8"):
 				keywordTokenType = TokenType::keywordI8;
 				break;
@@ -573,14 +722,23 @@ namespace nadsad::ascii {
 			case natl::hashStringLessThan8("f64"):
 				keywordTokenType = TokenType::keywordF64;
 				break;
+			case natl::hashStringLessThan8("bool"):
+				keywordTokenType = TokenType::keywordBool;
+				break;
 			case natl::hashStringLessThan8("char"):
 				keywordTokenType = TokenType::keywordChar;
 				break;
 			case natl::hashStringLessThan8("str"):
 				keywordTokenType = TokenType::keywordStr;
 				break;
-			case natl::hashStringLessThan8("flag"):
-				keywordTokenType = TokenType::keywordFlag;
+			case natl::hashStringLessThan8("op"):
+				keywordTokenType = TokenType::keywordOp;
+				break;
+			case natl::hashStringLessThan8("enum"):
+				keywordTokenType = TokenType::keywordEnum;
+				break;
+			case natl::hashStringLessThan8("farray"):
+				keywordTokenType = TokenType::keywordFarray;
 				break;
 			case natl::hashStringLessThan8("array"):
 				keywordTokenType = TokenType::keywordArray;
@@ -588,26 +746,29 @@ namespace nadsad::ascii {
 			case natl::hashStringLessThan8("dic"):
 				keywordTokenType = TokenType::keywordDic;
 				break;
-			case natl::hashStringLessThan8("struct"):
-				keywordTokenType = TokenType::keywordStruct;
-				break;
 			case natl::hashStringLessThan8("blob"):
 				keywordTokenType = TokenType::keywordBlob;
 				break;
 			case natl::hashStringLessThan8("file"):
 				keywordTokenType = TokenType::keywordFile;
 				break;
+			case natl::hashStringLessThan8("struct"):
+				keywordTokenType = TokenType::keywordStruct;
+				break;
+			case natl::hashStringLessThan8("variant"):
+				keywordTokenType = TokenType::keywordVariant;
+				break;
 			case natl::hashStringLessThan8("table"):
 				keywordTokenType = TokenType::keywordTable;
 				break;
-			case natl::hashStringLessThan8("tag"):
-				keywordTokenType = TokenType::keywordTag;
+			case natl::hashStringLessThan8("index"):
+				keywordTokenType = TokenType::keywordIndex;
 				break;
-			case natl::hashStringLessThan8("nametag"):
-				keywordTokenType = TokenType::keywordNameTag;
+			case natl::hashStringLessThan8("true"):
+				keywordTokenType = TokenType::keywordTrue;
 				break;
-			case natl::hashStringLessThan8("typetag"):
-				keywordTokenType = TokenType::keywordTypeTag;
+			case natl::hashStringLessThan8("false"):
+				keywordTokenType = TokenType::keywordTrue;
 				break;
 			default:
 				addUnknownToken(identifierSize, identifierStartIndex);
@@ -1027,15 +1188,6 @@ namespace nadsad::ascii {
 	constexpr LexicalInfo lexicalAnalysis(const natl::ConstAsciiStringView source, const natl::Bool enableFastIndexing = true) noexcept {
 		return LexicalAnalysisRunner().run(source, enableFastIndexing);
 	}
-	constexpr natl::Size findTokenColumnNumber(
-		const natl::Size tokenOffset, 
-		const natl::Size lineNumber, 
-		const natl::ArrayView<const natl::ui64> newLineOffsets) noexcept {
-		if (!natl::isInRange(newLineOffsets, lineNumber)) {
-			return 0;
-		}
-		return newLineOffsets[lineNumber] - tokenOffset;
-	}
 
 	constexpr natl::Size findTokenLineNumber(const natl::ui64 offset, const natl::ArrayView<const natl::ui64> newLineOffsets) noexcept {
 		const natl::Size newlineIndex = natl::findLowerBoundIndex(offset, newLineOffsets);
@@ -1044,6 +1196,16 @@ namespace nadsad::ascii {
 
 	constexpr natl::ConstAsciiStringView getViewOfTokenSource(const Token& token, const LexicalInfo& lexicalInfo) noexcept {
 		return natl::ConstAsciiStringView(lexicalInfo.source.subview(token.offset, token.size));
+	}
+
+	constexpr natl::Size findTokenColumnNumber(
+		const natl::Size tokenOffset,
+		const natl::Size lineNumber,
+		const natl::ArrayView<const natl::ui64> newLineOffsets) noexcept {
+		if (!natl::isInRange(newLineOffsets, lineNumber)) {
+			return 0;
+		}
+		return newLineOffsets[lineNumber] - tokenOffset;
 	}
 
 	template<typename DynStringContainer>
@@ -1090,7 +1252,7 @@ namespace nadsad::ascii {
 			natl::formatToBack(outputDst, " with value of ", getViewOfTokenSource(token, lexicalInfo));
 			return true;
 		}
-		break; case LexicalErrorType::inputToBig: 
+		break; case LexicalErrorType::inputToBig:
 			natl::formatToBack(outputDst, "input was too big");
 			return true;
 		break; case LexicalErrorType::unknownIdentifer: {
@@ -1112,7 +1274,7 @@ namespace nadsad::ascii {
 			}
 			const Token& token = lexicalInfo.tokens[tokenIndex];
 
-			natl::formatToBack(outputDst, "literal of type ", 
+			natl::formatToBack(outputDst, "literal of type ",
 				literalPreExtTypeToErrorString(lexicalError.unknownLiteralExtention.literalType),
 				" with unknown literal extention at");
 			formatTokenAtToBack<DynStringContainer>(outputDst, token, lexicalInfo);
@@ -1203,7 +1365,7 @@ namespace nadsad::ascii {
 			}
 			const Token& token = lexicalInfo.tokens[tokenIndex];
 
-			natl::formatToBack(outputDst, "unknown literal post ext \"", 
+			natl::formatToBack(outputDst, "unknown literal post ext \"",
 				getViewOfTokenSource(token, lexicalInfo).substr(lexicalError.unknownLiteralPostExt.literalPostExtStartOffset),
 				"\" from literal of type ",
 				literalPreExtTypeToErrorString(lexicalError.unknownLiteralPostExt.literalType), " at ");
@@ -1220,29 +1382,31 @@ namespace nadsad::ascii {
 namespace natl {
 	template<>
 	struct Serialize<nadsad::ascii::TokenType> {
-		using serialize_as_type = SerializeFlagType;
+		using serialize_as_type = SerializeEnum<SerializeTypeOf<UnderlyingType<nadsad::ascii::TokenType>>>;
 		template<typename Serializer>
 		constexpr static void write(Serializer& serializer, const nadsad::ascii::TokenType tokenType) noexcept {
 			auto tokenTypeSizeToString = [](const Size value) noexcept -> ConstAsciiStringView {
 				return nadsad::ascii::tokenTypeToString(static_cast<nadsad::ascii::TokenType>(value));
 			};
-			serializer.writeFlag(natl::enumToSize(tokenType), tokenTypeSizeToString);
+			serializer.writeEnum(natl::enumToSize(tokenType), tokenTypeSizeToString);
 		}
 	};
 
 	template<>
 	struct Serialize<nadsad::ascii::Token> {
-		using serialize_as_type = SerializeStructType;
+		using serialize_as_type = natl::SerializeStruct<
+			natl::SerializeTypeOf<nadsad::ascii::TokenType>,
+			natl::SerializeTypeOf<natl::Size>, 
+			natl::SerializeTypeOf<natl::Size>, 
+			natl::SerializeTypeOf<natl::Size>,
+			natl::SerializeStr
+		>;
 		template<typename Serializer>
 		constexpr static void write(Serializer& serializer, const nadsad::ascii::Token& token, const nadsad::ascii::LexicalInfo& lexicalInfo) noexcept {
 			serializer.beginWriteStruct();
-			const natl::Size lineNumber = nadsad::ascii::findTokenLineNumber(token.offset, lexicalInfo.newLineOffsets.toArrayView());
-			const natl::Size columnNumber = nadsad::ascii::findTokenColumnNumber(token.offset, lineNumber, lexicalInfo.newLineOffsets.toArrayView());
-
+			const natl::Size lineNumber = nadsad::ascii::findTokenLineNumber(token.offset, lexicalInfo.newLineOffsets);
 			serializeWriteNamed<Serializer, nadsad::ascii::TokenType>(serializer, "type", token.tokenType);
 			serializeWriteNamed<Serializer, natl::Size>(serializer, "lineNumber", lineNumber);
-			serializeWriteNamed<Serializer, natl::Size>(serializer, "columnNumber", columnNumber);
-			serializeWriteNamed<Serializer, natl::Size>(serializer, "offset", token.offset);
 
 			switch (token.tokenType) {
 			case nadsad::ascii::TokenType::start:
@@ -1285,9 +1449,9 @@ namespace natl {
 		}
 	};
 
-	template<>
-	struct Serialize<nadsad::ascii::LexicalError> {
-		using serialize_as_type = SerializeStructType;
+
+	template<> struct natl::Serialize<nadsad::ascii::LexicalError> {
+		using serialize_as_type = SerializeStruct<natl::SerializeStr>;
 		template<typename Serializer>
 		constexpr static void write(Serializer& serializer, const nadsad::ascii::LexicalError& lexicalError, const nadsad::ascii::LexicalInfo& lexicalInfo) noexcept {
 			natl::String errorMessage;
@@ -1299,15 +1463,16 @@ namespace natl {
 		}
 	};
 
-	template<>
-	struct Serialize<nadsad::ascii::LexicalInfo> {
-		using serialize_as_type = SerializeStructType;
+	template<> struct natl::Serialize<nadsad::ascii::LexicalInfo> {
+		using serialize_as_type = natl::SerializeStruct<
+			natl::SerializeArray<natl::SerializeTypeOf<nadsad::ascii::LexicalError>>,
+			natl::SerializeArray<natl::SerializeTypeOf<nadsad::ascii::Token>>
+		>;
 		template<typename Serializer>
 		constexpr static void write(Serializer& serializer, const nadsad::ascii::LexicalInfo& lexicalInfo) noexcept {
 			serializer.beginWriteStruct();
 			
-			serializer.beginWrite<SerializeID::none>("errors");
-			serializer.as<natl::SerializeArrayType<natl::SerializeStructType>>();
+			serializer.beginWrite<serialize_as_type::member_types::template at<0>>("errors");
 
 			serializer.writeValue();
 			if (lexicalInfo.errors.empty()) {
@@ -1323,21 +1488,16 @@ namespace natl {
 			}
 			serializer.endWrite();
 
-			serializer.beginWrite<SerializeID::none>("tokens");
-			serializer.as<natl::SerializeArrayType<natl::SerializeStructType>>();
+			serializer.beginWrite<serialize_as_type::member_types::template at<1>>("tokens");
 
 			serializer.writeValue();
-			if (lexicalInfo.tokens.isEmpty()) {
-				serializer.writeEmptyArray();
-			} else {
-				serializer.beginWriteArray();
-				for (const nadsad::ascii::Token& token : lexicalInfo.tokens) {
-					serializer.beginWriteArrayElement();
-					serializeWrite<Serializer, nadsad::ascii::Token>(serializer, token, lexicalInfo);
-					serializer.endWriteArrayElement();
-				}
-				serializer.endWriteArray();
+			serializer.beginWriteArray();
+			for (const nadsad::ascii::Token& token : lexicalInfo.tokens) {
+				serializer.beginWriteArrayElement();
+				serializeWrite<Serializer, nadsad::ascii::Token>(serializer, token, lexicalInfo);
+				serializer.endWriteArrayElement();
 			}
+			serializer.endWriteArray();
 			serializer.endWrite();
 
 			serializer.endWriteStruct();

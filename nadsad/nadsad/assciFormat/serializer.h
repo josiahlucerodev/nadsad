@@ -5,8 +5,194 @@
 
 //interface 
 namespace nadsad::ascii {
+	namespace impl {
+		template<typename SerializeType>
+		struct SerializeTypeToString;
+
+		template<> struct SerializeTypeToString<natl::SerializeI8> {
+			template<typename OutputDstType>
+			constexpr static void write(OutputDstType& output) noexcept {
+				output += "i8";
+			}
+		};
+		template<> struct SerializeTypeToString<natl::SerializeI16> {
+			template<typename OutputDstType>
+			constexpr static void write(OutputDstType& output) noexcept {
+				output += "i16";
+			}
+		};
+		template<> struct SerializeTypeToString<natl::SerializeI32> {
+			template<typename OutputDstType>
+			constexpr static void write(OutputDstType& output) noexcept {
+				output += "i32";
+			}
+		};
+		template<> struct SerializeTypeToString<natl::SerializeI64> {
+			template<typename OutputDstType>
+			constexpr static void write(OutputDstType& output) noexcept {
+				output += "i64";
+			}
+		};
+		template<> struct SerializeTypeToString<natl::SerializeUI8> {
+			template<typename OutputDstType>
+			constexpr static void write(OutputDstType& output) noexcept {
+				output += "ui8";
+			}
+		};
+		template<> struct SerializeTypeToString<natl::SerializeUI16> {
+			template<typename OutputDstType>
+			constexpr static void write(OutputDstType& output) noexcept {
+				output += "ui16";
+			}
+		};
+		template<> struct SerializeTypeToString<natl::SerializeUI32> {
+			template<typename OutputDstType>
+			constexpr static void write(OutputDstType& output) noexcept {
+				output += "ui32";
+			}
+		};
+		template<> struct SerializeTypeToString<natl::SerializeUI64> {
+			template<typename OutputDstType>
+			constexpr static void write(OutputDstType& output) noexcept {
+				output += "i64";
+			}
+		};
+
+		template<> struct SerializeTypeToString<natl::SerializeF32> {
+			template<typename OutputDstType>
+			constexpr static void write(OutputDstType& output) noexcept {
+				output += "f32";
+			}
+		};
+		template<> struct SerializeTypeToString<natl::SerializeF64> {
+			template<typename OutputDstType>
+			constexpr static void write(OutputDstType& output) noexcept {
+				output += "f64";
+			}
+		};
+
+		template<> struct SerializeTypeToString<natl::SerializeBool> {
+			template<typename OutputDstType>
+			constexpr static void write(OutputDstType& output) noexcept {
+				output += "bool";
+			}
+		};
+		template<> struct SerializeTypeToString<natl::SerializeChar> {
+			template<typename OutputDstType>
+			constexpr static void write(OutputDstType& output) noexcept {
+				output += "char";
+			}
+		};
+		template<> struct SerializeTypeToString<natl::SerializeStr> {
+			template<typename OutputDstType>
+			constexpr static void write(OutputDstType& output) noexcept {
+				output += "str";
+			}
+		};
+		template<> struct SerializeTypeToString<natl::SerializeFile> {
+			template<typename OutputDstType>
+			constexpr static void write(OutputDstType& output) noexcept {
+				output += "file";
+			}
+		};
+		template<> struct SerializeTypeToString<natl::SerializeBlob> {
+			template<typename OutputDstType>
+			constexpr static void write(OutputDstType& output) noexcept {
+				output += "blob";
+			}
+		};
+		template<typename SerializeType> struct SerializeTypeToString<natl::SerializeOptional<SerializeType>> {
+			template<typename OutputDstType>
+			constexpr static void write(OutputDstType& output) noexcept {
+				output += "op ";
+				SerializeTypeToString<SerializeType>::template write<OutputDstType>(output);
+			}
+		};
+		template<typename BaseElementType> struct SerializeTypeToString<natl::SerializeEnum<BaseElementType>> {
+			template<typename OutputDstType>
+			constexpr static void write(OutputDstType& output) noexcept {
+				output += "enum ";
+				SerializeTypeToString<BaseElementType>::template write<OutputDstType>(output);
+			}
+		};
+		template<typename ElementType, natl::Size Number> struct SerializeTypeToString<natl::SerializeFixedArray<ElementType, Number>> {
+			template<typename OutputDstType>
+			constexpr static void write(OutputDstType& output) noexcept {
+				output += "farray";
+				output += "[";
+				SerializeTypeToString<ElementType>::template write<OutputDstType>(output);
+				output += ",";
+				output += natl::intToStringDecimal(Number);
+				output += "]";
+			}
+		};
+		template<typename ElementType> struct SerializeTypeToString<natl::SerializeArray<ElementType>> {
+			template<typename OutputDstType>
+			constexpr static void write(OutputDstType& output) noexcept {
+				output += "array";
+				output += "[";
+				SerializeTypeToString<ElementType>::template write<OutputDstType>(output);
+				output += "]";
+			}
+		};
+		template<typename KeyType, typename ValueType> struct SerializeTypeToString<natl::SerializeDic<KeyType, ValueType>> {
+			template<typename OutputDstType>
+			constexpr static void write(OutputDstType& output) noexcept {
+				output += "dic";
+				output += "{";
+				SerializeTypeToString<KeyType>::template write<OutputDstType>(output);
+				output += ",";
+				SerializeTypeToString<ValueType>::template write<OutputDstType>(output);
+				output += "}";
+			}
+		};
+		template<typename... MemberTypes> struct SerializeTypeToString<natl::SerializeStruct<MemberTypes...>> {
+			template<typename OutputDstType, typename MemberType, natl::Size Index>
+			constexpr static void writeMember(OutputDstType& output) noexcept {
+				if constexpr (Index != 0) {
+					output += ", ";
+				}
+				SerializeTypeToString<MemberType>::template write<OutputDstType>(output);
+			}
+
+			template<typename OutputDstType>
+			constexpr static void write(OutputDstType& output) {
+				output += "struct{";
+				[&] <natl::Size... Indices>(natl::IndexSequence<Indices...>) noexcept {
+					(writeMember<OutputDstType, MemberTypes, Indices>(output), ...);
+				}(natl::MakeIndexSequence<sizeof...(MemberTypes)>{});
+				output += "}";
+			}
+		};
+
+		template<typename... Types> struct SerializeTypeToString<natl::SerializeVariant<Types...>> {
+			template<typename OutputDstType, typename Type, natl::Size Index>
+			constexpr static void writeType(OutputDstType& output) noexcept {
+				if constexpr (Index != 0) {
+					output += ", ";
+				}
+				SerializeTypeToString<Type>::template write<OutputDstType>(output);
+			}
+			template<typename OutputDstType>
+			constexpr static void write(OutputDstType& output) {
+				output += "variant{";
+				[&] <natl::Size... Indices>(natl::IndexSequence<Indices...>) noexcept {
+					(writeType<OutputDstType, Types, Indices>(output), ...);
+				}(natl::MakeIndexSequence<sizeof...(Types)>{});
+				output += "}";
+			}
+		};
+	}
+
+	template<typename SerializeType, typename OutputDstType>
+		requires(natl::IsSerializeTypeC<SerializeType>)
+	constexpr void serializeTypeToString(OutputDstType& output) noexcept {
+		impl::SerializeTypeToString<SerializeType>::write(output);
+	}
+
+
 	template<
-		natl::Size smallBufferByteSize, 
+		natl::Size smallBufferByteSize,
 		natl::SerializeFlag SerializeFlag = natl::SerializeFlag::pretty,
 		typename Alloc = natl::DefaultAllocator<natl::Ascii>>
 		requires(natl::IsAllocator<Alloc>)
@@ -55,9 +241,11 @@ namespace nadsad::ascii {
 			}
 		}
 	public:
+		template<typename IndexIDSizeType>
+			requires(natl::IsBuiltInIntegerC<IndexIDSizeType>)
 		constexpr void beginWriteTable(const natl::Size size) noexcept {
 			storage += "table ";
-			newLine();
+			serializeTypeToString<IndexIDSizeType, container_type>(storage);
 			space();
 			storage += '{';
 			newLine();
@@ -68,88 +256,36 @@ namespace nadsad::ascii {
 			indent();
 			storage += '}';
 		}
-		constexpr natl::ui64 writeTableElement(const natl::ConstAsciiStringView name, const natl::ui64 id) noexcept {
+		template<typename IndexIDSizeType>
+			requires(natl::IsBuiltInIntegerC<IndexIDSizeType>)
+		constexpr natl::ui64 writeTableElement(const natl::ConstAsciiStringView name, const IndexIDSizeType id) noexcept {
 			indent();
 			writeStr(name);
 			storage += ',';
 			newLine();
 		}
-		constexpr void saveIndex(const natl::ui64 indexId, const natl::ConstAsciiStringView name) noexcept {
+
+		template<typename IndexIDSizeType>
+			requires(natl::IsBuiltInIntegerC<IndexIDSizeType>)
+		constexpr void saveIndex(const IndexIDSizeType indexId, const natl::ConstAsciiStringView name) noexcept {
 			indent();
+			storage += "index ";
+			serializeTypeToString<IndexIDSizeType, container_type>(storage);
+			storage += " ";
 			natl::intToStringDecimal(storage, indexId);
 			writeStr(name);
 			storage += ';';
 			newLine();
-;		}
-		//write
-
-	private:
-		constexpr void beginWriteName(const natl::ConstAsciiStringView name) noexcept {
-			writeStr(name);
-			storage += ' ';
-		}
-		template<natl::SerializeID ID>
-		constexpr void beginWriteID() noexcept {
-			if constexpr ((ID & natl::SerializeID::name) != natl::SerializeID::none) {
-				storage += "nameid ";
-			}
-			if constexpr ((ID & natl::SerializeID::type) != natl::SerializeID::none) {
-				storage += "typeid ";
-			}
-		}
-		constexpr void beginWriteNameTag(const natl::SerializeNameTag& serializeNameTag) noexcept {
-			storage += "nametag ";
-			writeStr(serializeNameTag.name);
-			storage += ',';
-			space();
-		}
-		template<typename SerializeNumberTagType>
-			requires(natl::IsSerializeNumberTagC<SerializeNumberTagType>)
-		constexpr void beginWriteNumberTag(const SerializeNumberTagType& serializeNumberTag) noexcept {
-			storage += "numbertag ";
-			storage += AsTypeToStringV<typename SerializeNumberTagType::number_type>::value.c_str();
-			storage += " ";
-			storage += natl::intToStringDecimal(serializeNumberTag.number);
-			storage += ',';
-			space();
+			;
 		}
 	public:
+		template<typename SerializeType>
 		constexpr void beginWrite(const natl::ConstAsciiStringView name) noexcept {
 			indent();
-			beginWriteName(name);
+			writeStr(name);
+			storage += ' ';
+			serializeTypeToString<SerializeType, container_type>(storage);
 		}
-		template<natl::SerializeID ID>
-		constexpr void beginWrite(const natl::ConstAsciiStringView name) noexcept {
-			indent();
-			beginWriteID<ID>();
-			beginWriteName(name);
-		}
-		template<natl::SerializeID ID>
-		constexpr void beginWrite(const natl::ConstAsciiStringView name, const natl::SerializeNameTag& serializeNameTag) noexcept {
-			indent();
-			beginWriteNameTag(serializeNameTag);
-			beginWriteID<ID>();
-			beginWriteName(name);
-		}
-		template<natl::SerializeID ID, typename SerializeNumberTagType>
-			requires(natl::IsSerializeNumberTagC<SerializeNumberTagType>)
-		constexpr void beginWrite(const natl::ConstAsciiStringView name, const SerializeNumberTagType& serializeNumberTag) noexcept {
-			indent();
-			beginWriteNumberTag<SerializeNumberTagType>(serializeNumberTag);
-			beginWriteID<ID>();
-			beginWriteName(name);
-		}
-		template<natl::SerializeID ID, typename SerializeNumberTagType>
-			requires(natl::IsSerializeNumberTagC<SerializeNumberTagType>)
-		constexpr void beginWrite(const natl::ConstAsciiStringView name, const natl::SerializeNameTag& serializeNameTag, const SerializeNumberTagType& serializeNumberTag) noexcept {
-			indent();
-			beginWriteNameTag(serializeNameTag);
-			beginWriteNumberTag<SerializeNumberTagType>(serializeNumberTag);
-			beginWriteID<ID>();
-			beginWriteName(name);
-		}
-
-
 		constexpr void endWrite() noexcept {
 			storage += ',';
 			newLine();
@@ -159,99 +295,19 @@ namespace nadsad::ascii {
 			space();
 		}
 
-		//as
-	private:
-		template<typename SerializeType>
-		struct AsTypeToStringV;
-		template<typename SerializeType>
-		constexpr static natl::TemplateStringLiteral AsTypeToString = AsTypeToStringV<SerializeType>::value;
-
-		template<> struct AsTypeToStringV<natl::i8> { 
-			constexpr static natl::TemplateStringLiteral value = "i8";
-		};
-		template<> struct AsTypeToStringV<natl::i16> { 
-			constexpr static natl::TemplateStringLiteral value = "i16";
-		};
-		template<> struct AsTypeToStringV<natl::i32> { 
-			constexpr static natl::TemplateStringLiteral value = "i32";
-		};
-		template<> struct AsTypeToStringV<natl::i64> { 
-			constexpr static natl::TemplateStringLiteral value = "i64";
-		};
-		template<> struct AsTypeToStringV<natl::ui8> { 
-			constexpr static natl::TemplateStringLiteral value = "ui8";
-		};
-		template<> struct AsTypeToStringV<natl::ui16> { 
-			constexpr static natl::TemplateStringLiteral value = "ui16";
-		};
-		template<> struct AsTypeToStringV<natl::ui32> { 
-			constexpr static natl::TemplateStringLiteral value = "ui32";
-		};
-		template<> struct AsTypeToStringV<natl::ui64> { 
-			constexpr static natl::TemplateStringLiteral value = "i64";
-		};
-		
-		template<> struct AsTypeToStringV<natl::f32> { 
-			constexpr static natl::TemplateStringLiteral value = "f32";
-		};
-		template<> struct AsTypeToStringV<natl::f64> { 
-			constexpr static natl::TemplateStringLiteral value = "f64";
-		};
-
-		template<> struct AsTypeToStringV<natl::SerializeCharType> { 
-			constexpr static natl::TemplateStringLiteral value = "char";
-		};
-		template<> struct AsTypeToStringV<natl::SerializeStrType> {
-			constexpr static natl::TemplateStringLiteral value = "str";
-		};
-		template<> struct AsTypeToStringV<natl::SerializeFlagType> {
-			constexpr static natl::TemplateStringLiteral value = "flag";
-		};
-		template<> struct AsTypeToStringV<natl::SerializeStructType> {
-			constexpr static natl::TemplateStringLiteral value = "struct";
-		};
-		template<> struct AsTypeToStringV<natl::SerializeFileType> {
-			constexpr static natl::TemplateStringLiteral value = "file";
-		};
-		template<> struct AsTypeToStringV<natl::SerializeBlobType> {
-			constexpr static natl::TemplateStringLiteral value = "blob";
-		};
-		template<typename SerializeType> struct AsTypeToStringV<natl::SerializeOptionalType<SerializeType>> {
-			constexpr static natl::TemplateStringLiteral value = natl::StringLiteral<"op ">::Concat<AsTypeToString<SerializeType>>;
-		};
-		template<typename ElementType> struct AsTypeToStringV<natl::SerializeArrayType<ElementType>> {
-			constexpr static natl::TemplateStringLiteral value = natl::StringLiteral<"array[">::Concat<AsTypeToString<ElementType>, "]">;
-		};
-		template<typename KeyType, typename ValueType> struct AsTypeToStringV<natl::SerializeDicType<KeyType, ValueType>> {
-			constexpr static natl::TemplateStringLiteral value = 
-				natl::StringLiteral<"dic{">::Concat<AsTypeToString<KeyType>, ",", AsTypeToString<ValueType>, "}">;
-		};
-
-		template<typename IntegerType> struct AsTypeToStringV<natl::SerializeNumberTag<IntegerType>> {
-			constexpr static natl::TemplateStringLiteral value = "blob";
-		};
-
-	public:
-		template<typename SerializeType, natl::SerializeID ID = natl::SerializeID::none>
-			requires(natl::IsSerializableC<SerializeType>)
-		constexpr void as() noexcept {
-			storage += AsTypeToStringV<SerializeType>::value.c_str();
-		}
-
-		//write
 		constexpr void writeNull(const natl::i8 value) noexcept {
 			storage += "null";
 		}
-		constexpr void writeI8(const natl::i8 value) noexcept { 
+		constexpr void writeI8(const natl::i8 value) noexcept {
 			natl::intToStringDecimal<container_type, natl::i8>(storage, value);
 		}
-		constexpr void writeI16(const natl::i16 value) noexcept { 
+		constexpr void writeI16(const natl::i16 value) noexcept {
 			natl::intToStringDecimal<container_type, natl::i16>(storage, value);
 		}
-		constexpr void writeI32(const natl::i32 value) noexcept { 
+		constexpr void writeI32(const natl::i32 value) noexcept {
 			natl::intToStringDecimal<container_type, natl::i32>(storage, value);
 		}
-		constexpr void writeI64(const natl::i64 value) noexcept { 
+		constexpr void writeI64(const natl::i64 value) noexcept {
 			natl::intToStringDecimal<container_type, natl::i64>(storage, value);
 		}
 		constexpr void writeUI8(const natl::ui8 value) noexcept {
@@ -272,27 +328,35 @@ namespace nadsad::ascii {
 		constexpr void writeF64(const natl::f64 value) noexcept {
 			natl::floatToStringDecimal<container_type, natl::f32>(storage, value);
 		}
-		constexpr void writeChar(const natl::Char value) noexcept { 
+		constexpr void writeBool(const natl::Bool value) noexcept {
+			if (value) {
+				storage += "true";
+			} else {
+				storage += "false";
+			}
+
+		}
+		constexpr void writeChar(const natl::Char value) noexcept {
 			storage += '\'';
 			switch (value) {
-				break; case '\a': storage += "\\a";
-				break; case '\b': storage += "\\b";
-				break; case '\f': storage += "\\f";
-				break; case '\n': storage += "\\n";
-				break; case '\r': storage += "\\r";
-				break; case '\t': storage += "\\t";
-				break; case '\v': storage += "\\v";
-				break; case '\\': storage += "\\\\";
-				break; case '\"': storage += "\\\"";
-				break; case '\'': storage += "\\\'";
-				break; default: storage += value;
+			break; case '\a': storage += "\\a";
+			break; case '\b': storage += "\\b";
+			break; case '\f': storage += "\\f";
+			break; case '\n': storage += "\\n";
+			break; case '\r': storage += "\\r";
+			break; case '\t': storage += "\\t";
+			break; case '\v': storage += "\\v";
+			break; case '\\': storage += "\\\\";
+			break; case '\"': storage += "\\\"";
+			break; case '\'': storage += "\\\'";
+			break; default: storage += value;
 			}
 			storage += '\'';
 		}
 		constexpr void writeStr(const natl::Ascii* str, const natl::Size size) noexcept {
 			writeStr(natl::ConstAsciiStringView(str, size));
 		}
-		constexpr void writeStr(const natl::ConstAsciiStringView str) noexcept { 
+		constexpr void writeStr(const natl::ConstAsciiStringView str) noexcept {
 			storage += '\"';
 
 			for (const natl::Ascii character : str) {
@@ -314,17 +378,38 @@ namespace nadsad::ascii {
 			storage += '\"';
 		}
 
-		constexpr void writeFlag(const natl::Size value) noexcept {
-			natl::intToStringDecimal<container_type, natl::Size>(storage, value);
-		}
-		template<typename Functor>
-			requires(natl::IsToFlagConvertFunctor<Functor>)
-		constexpr void writeFlag(const natl::Size value, Functor&& toFlagFunction) noexcept {
-			storage += '\"';
-			storage += toFlagFunction(value);
-			storage += '\"';
+		constexpr void writeFile(const natl::ConstAsciiStringView fileName, const natl::ArrayView<const natl::Byte> data) noexcept {
+			writeStr(fileName);
+			writeBlob(data);
 		}
 
+		constexpr void writeBlob(const natl::ArrayView<const natl::Byte> data) noexcept {
+			storage += '(';
+
+			for (const natl::Byte part : data) {
+				switch (static_cast<natl::ui8>(part)) {
+				case 255:
+					storage += static_cast<natl::Ascii>(255);
+					storage += static_cast<natl::Ascii>(255);
+				case static_cast<natl::ui8>(')'):
+					storage += static_cast<natl::Ascii>(255);
+					storage += ')';
+				default:
+					storage += part;
+					break;
+				}
+			}
+
+			storage += ')';
+			newLine();
+		}
+		template<typename EnumIntegerType, typename Functor>
+			requires(natl::IsBuiltInIntegerC<EnumIntegerType>&& natl::SerializeFlagToStringConvertFunctor<Functor, EnumIntegerType>)
+		constexpr void writeEnum(const EnumIntegerType value, Functor&& toString) noexcept {
+			storage += '\"';
+			storage += toString(value);
+			storage += '\"';
+		}
 		constexpr void writeEmptyArray() noexcept {
 			storage += "[]";
 		}
@@ -341,7 +426,7 @@ namespace nadsad::ascii {
 		constexpr void beginWriteArrayElement() noexcept {
 			indent();
 		}
-		constexpr void endWriteArrayElement() noexcept { 
+		constexpr void endWriteArrayElement() noexcept {
 			storage += ',';
 			newLine();
 		}
@@ -374,7 +459,6 @@ namespace nadsad::ascii {
 			space();
 		}
 
-
 		constexpr void beginWriteStruct() noexcept {
 			storage += '{';
 			newLine();
@@ -386,33 +470,19 @@ namespace nadsad::ascii {
 			storage += '}';
 		}
 
-		constexpr void writeFileName(const natl::ConstAsciiStringView fileName) noexcept {
-			writeStr(fileName);
-		}
-		constexpr void writeFileContent(const natl::ArrayView<const natl::Byte> data) noexcept {
-			writeBlob(data);
-		}
-
-		constexpr void writeBlob(const natl::ArrayView<const natl::Byte> data) noexcept {
-			storage += '(';
-
-			for (const natl::Byte part : data) {
-				switch (static_cast<natl::ui8>(part)) {
-				case 255:
-					storage += static_cast<natl::Ascii>(255);
-					storage += static_cast<natl::Ascii>(255);
-				case static_cast<natl::ui8>(')'):
-					storage += static_cast<natl::Ascii>(255);
-					storage += ')';
-				default:
-					storage += part;
-					break;
-				}
-			}
-
-			storage += ')';
+		template<typename SerializeType>
+			requires(natl::IsSerializeType<SerializeType>)
+		constexpr void beginWriteVariant() noexcept {
+			storage += "variant{";
+			serializeTypeToString<SerializeType>(storage);
+			storage += '} {';
 			newLine();
+			increaseIndent();
+		}
+		constexpr void endWriteVariant() noexcept {
+			decreaseIndent();
+			indent();
+			storage += '}';
 		}
 	};
-	//serilie()
 }

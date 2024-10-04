@@ -1,40 +1,54 @@
-	template<> struct Serialize<ui8> {
-		template<typename Serializer>
-		constexpr static void as(Serializer& serializer) noexcept {
-			serializer.asUI8();
-		}
-		template<typename Serializer>
-		constexpr static void write(Serializer& serializer, const ui8 value) noexcept {
-			serializer.writeUI8(value);
-		}
-	};
-	template<> struct Serialize<ui16> {
-		template<typename Serializer>
-		constexpr static void as(Serializer& serializer) noexcept {
-			serializer.asUI16();
-		}
-		template<typename Serializer>
-		constexpr static void write(Serializer& serializer, const ui16 value) noexcept {
-			serializer.writeUI16(value);
-		}
-	};
-	template<> struct Serialize<ui32> {
-		template<typename Serializer>
-		constexpr static void as(Serializer& serializer) noexcept {
-			serializer.asUI32();
-		}
-		template<typename Serializer>
-		constexpr static void write(Serializer& serializer, const ui32 value) noexcept {
-			serializer.writeUI32(value);
-		}
-	};
-	template<> struct Serialize<ui64> {
-		template<typename Serializer>
-		constexpr static void as(Serializer& serializer) noexcept {
-			serializer.asUI64();
-		}
-		template<typename Serializer>
-		constexpr static void write(Serializer& serializer, const ui64 value) noexcept {
-			serializer.writeUI64(value);
-		}
-	};
+template<typename Type> struct IsSerializeI8V : FalseType {};
+template<> struct IsSerializeI8V<SerializeChar> : TrueType {};
+template<typename Type> constexpr inline Bool IsSerializeI8 = IsSerializeI8V<Type>::value;
+template<typename Type> concept IsSerializeI8C = IsSerializeI8<Type>;
+
+template<typename Type> struct IsSerializeI16V : FalseType {};
+template<> struct IsSerializeI16V<SerializeChar> : TrueType {};
+template<typename Type> constexpr inline Bool IsSerializeI16 = IsSerializeI16V<Type>::value;
+template<typename Type> concept IsSerializeI16C = IsSerializeI16<Type>;
+
+template<typename Type> struct IsSerializeI32V : FalseType {};
+template<> struct IsSerializeI32V<SerializeChar> : TrueType {};
+template<typename Type> constexpr inline Bool IsSerializeI32 = IsSerializeI32V<Type>::value;
+template<typename Type> concept IsSerializeI32C = IsSerializeI32<Type>;
+
+template<typename Type> struct IsSerializeI64V : FalseType {};
+template<> struct IsSerializeI64V<SerializeChar> : TrueType {};
+template<typename Type> constexpr inline Bool IsSerializeI64 = IsSerializeI64V<Type>::value;
+template<typename Type> concept IsSerializeI64C = IsSerializeI64<Type>;
+
+template<typename Type> struct IsSerializeUI8V : FalseType {};
+template<> struct IsSerializeUI8V<SerializeChar> : TrueType {};
+template<typename Type> constexpr inline Bool IsSerializeUI8 = IsSerializeUI8V<Type>::value;
+template<typename Type> concept IsSerializeUI8C = IsSerializeUI8<Type>;
+
+template<typename Type> struct IsSerializeUI16V : FalseType {};
+template<> struct IsSerializeUI16V<SerializeChar> : TrueType {};
+template<typename Type> constexpr inline Bool IsSerializeUI16 = IsSerializeUI16V<Type>::value;
+template<typename Type> concept IsSerializeUI16C = IsSerializeUI16<Type>;
+
+template<typename Type> struct IsSerializeUI32V : FalseType {};
+template<> struct IsSerializeUI32V<SerializeChar> : TrueType {};
+template<typename Type> constexpr inline Bool IsSerializeUI32 = IsSerializeUI32V<Type>::value;
+template<typename Type> concept IsSerializeUI32C = IsSerializeUI32<Type>;
+
+template<typename Type> struct IsSerializeUI64V : FalseType {};
+template<> struct IsSerializeUI64V<SerializeChar> : TrueType {};
+template<typename Type> constexpr inline Bool IsSerializeUI64 = IsSerializeUI64V<Type>::value;
+template<typename Type> concept IsSerializeUI64C = IsSerializeUI64<Type>;
+
+template<typename Type> struct IsSerializeF32V : FalseType {};
+template<> struct IsSerializeF32V<SerializeChar> : TrueType {};
+template<typename Type> constexpr inline Bool IsSerializeF32 = IsSerializeF32V<Type>::value;
+template<typename Type> concept IsSerializeF32C = IsSerializeF32<Type>;
+
+template<typename Type> struct IsSerializeF64V : FalseType {};
+template<> struct IsSerializeF64V<SerializeChar> : TrueType {};
+template<typename Type> constexpr inline Bool IsSerializeF64 = IsSerializeF64V<Type>::value;
+template<typename Type> concept IsSerializeF64C = IsSerializeF64<Type>;
+
+template<typename Type> struct IsSerializeBoolV : FalseType {};
+template<> struct IsSerializeBoolV<SerializeChar> : TrueType {};
+template<typename Type> constexpr inline Bool IsSerializeBool = IsSerializeBoolV<Type>::value;
+template<typename Type> concept IsSerializeBoolC = IsSerializeBool<Type>;

@@ -1,7 +1,6 @@
-[submodule "externals/nacmake"]
-	path = externals/nacmake
-	url = https://github.com/josiahlucerodev/nacmake
+[submodule "externals/nactemplate"]
+	path = externals/nactemplate
+	url = https://github.com/josiahlucerodev/nactemplate
 [submodule "externals/natl"]
 	path = externals/natl
 	url = https://github.com/josiahlucerodev/natl
-	branch = dev

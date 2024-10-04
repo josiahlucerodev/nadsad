@@ -1,3 +1,4 @@
+
 the file: "the/" """ """
 the struct {
 
@@ -7,17 +8,16 @@ dic {str, int}: {}
 
 
 
-table {
+table ui8 {
 	0,
 	1,
 	2,
 } 
+index ui8 0 "pos"; 
 
-index 0 "pos"; nametag "vec3"; numtag struct pos: {
-	nametag "vec"; numbertag ui32 8; nameid typeid "x" f32: 0.0,
-	nameid typeid "x" f32: 0.0,
-	nameid typeid "y" f32: 0.0, 
-	nameid typeid "z" f32: 0.0, 
+"pos" struct{f32, f32, f32}: {
+	"x" f32: 0.0,
+	"y" f32: 0.0, 
+	"z" f32: 0.0, 
 }
-
 
