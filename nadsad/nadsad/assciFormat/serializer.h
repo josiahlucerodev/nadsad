@@ -404,7 +404,7 @@ namespace nadsad::ascii {
 			newLine();
 		}
 		template<typename EnumIntegerType, typename Functor>
-			requires(natl::IsBuiltInIntegerC<EnumIntegerType>&& natl::SerializeFlagToStringConvertFunctor<Functor, EnumIntegerType>)
+			requires(natl::IsBuiltInIntegerC<EnumIntegerType>&& natl::IsSerializeFlagToStringConvertFunctor<Functor, EnumIntegerType>)
 		constexpr void writeEnum(const EnumIntegerType value, Functor&& toString) noexcept {
 			storage += '\"';
 			storage += toString(value);
@@ -434,7 +434,7 @@ namespace nadsad::ascii {
 		constexpr void writeEmptyDic() noexcept {
 			storage += "{}";
 		}
-		constexpr void beginWritDic() noexcept {
+		constexpr void beginWriteDic() noexcept {
 			storage += '{';
 			newLine();
 			increaseIndent();

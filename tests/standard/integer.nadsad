@@ -8,7 +8,7 @@
 "decPreExtIntegerPostExtUI32" ui32: #dec#1234_ui32,
 "decPreExtIntegerPostExtUI64" ui64: #dec#1234_ui64,
 
-"hexPreExtInteger" ui64: #dec#ffff,
+"hexPreExtInteger" ui64: #hex#ffff,
 "hexPreExtIntegerPostExtI8" i8: #hex#ffff_i8,
 "hexPreExtIntegerPostExtI16" i16: #hex#ffff_i16,
 "hexPreExtIntegerPostExtI32" i32: #hex#ffff_i32,
@@ -27,4 +27,3 @@
 "binPreExtIntegerPostExtUI16" ui16: #bin#1010_ui16,
 "binPreExtIntegerPostExtUI32" ui32: #bin#1010_ui32,
 "binPreExtIntegerPostExtUI64" ui64: #bin#1010_ui64,
-

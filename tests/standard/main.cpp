@@ -7,7 +7,7 @@
 
 int main() noexcept {
 	natl::Path testFilePath = nadsad::getTestResourcePath();
-	testFilePath /= "standard/sample.nadsad";
+	testFilePath /= "standard/integer.nadsad";
 
 	natl::File testFile(testFilePath.c_str(), natl::FileOpenMode::readStart);
 	natl::StringByteSize<10000> fileContents;
