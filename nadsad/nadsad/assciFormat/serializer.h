@@ -241,6 +241,9 @@ namespace nadsad::ascii {
 			}
 		}
 	public:
+		constexpr void begin() noexcept {}
+		constexpr void end() noexcept {}
+
 		template<typename IndexIDSizeType>
 			requires(natl::IsBuiltInIntegerC<IndexIDSizeType>)
 		constexpr void beginWriteTable(const natl::Size size) noexcept {
@@ -295,7 +298,7 @@ namespace nadsad::ascii {
 			space();
 		}
 
-		constexpr void writeNull(const natl::i8 value) noexcept {
+		constexpr void writeNull() noexcept {
 			storage += "null";
 		}
 		constexpr void writeI8(const natl::i8 value) noexcept {
@@ -388,13 +391,13 @@ namespace nadsad::ascii {
 
 			for (const natl::Byte part : data) {
 				switch (static_cast<natl::ui8>(part)) {
-				case 255:
+				break; case 255:
 					storage += static_cast<natl::Ascii>(255);
 					storage += static_cast<natl::Ascii>(255);
-				case static_cast<natl::ui8>(')'):
+				break; case static_cast<natl::ui8>(')'):
 					storage += static_cast<natl::Ascii>(255);
 					storage += ')';
-				default:
+				break; default:
 					storage += part;
 					break;
 				}
@@ -404,12 +407,31 @@ namespace nadsad::ascii {
 			newLine();
 		}
 		template<typename EnumIntegerType, typename Functor>
-			requires(natl::IsBuiltInIntegerC<EnumIntegerType>&& natl::IsSerializeFlagToStringConvertFunctor<Functor, EnumIntegerType>)
+			requires(natl::IsBuiltInIntegerC<EnumIntegerType> && natl::IsSerializeFlagToStringConvertFunctor<Functor, EnumIntegerType>)
 		constexpr void writeEnum(const EnumIntegerType value, Functor&& toString) noexcept {
 			storage += '\"';
 			storage += toString(value);
 			storage += '\"';
 		}
+
+		constexpr void beginWriteFixedArray() noexcept {
+			storage += '[';
+			newLine();
+			increaseIndent();
+		}
+		constexpr void endWriteFixedArray() noexcept {
+			decreaseIndent();
+			indent();
+			storage += ']';
+		}
+		constexpr void beginWriteFixedArrayElement() noexcept {
+			indent();
+		}
+		constexpr void endWriteFixedArrayElement() noexcept {
+			storage += ',';
+			newLine();
+		}
+
 		constexpr void writeEmptyArray() noexcept {
 			storage += "[]";
 		}
@@ -486,3 +508,5 @@ namespace nadsad::ascii {
 		}
 	};
 }
+
+static_assert(natl::IsFullSerializer<nadsad::ascii::Serializer<1000>>, "nadsad: nadsad::ascii::Serializer is not a full serializer");

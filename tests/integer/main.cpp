@@ -3,25 +3,16 @@
 #include "../testUtils.h"
 #include <nadsad/nadsad.h>
 
-
-
 int main() noexcept {
-	natl::Path testFilePath = nadsad::getTestResourcePath();
-	testFilePath /= "standard/integer.nadsad";
-
-	natl::File testFile(testFilePath.c_str(), natl::FileOpenMode::readStart);
-	natl::StringByteSize<10000> fileContents;
-	const natl::LoadAllFileContentError error = natl::loadAllFileContent(testFile, fileContents);
-
-	if (error != natl::LoadAllFileContentError::none) {
-		natl::printlnf("failed to load ", testFilePath.toStringView(), ": ", natl::loadAllFileContentErrorToString(error));
-		return 0;
-	} 
+	natl::Option<natl::StringByteSize<10000>> simpleTestFile = nadsad::loadTestFile<10000>("integer/simpleTest.nadsad");
+	if (simpleTestFile.doesNotHaveValue()) { 
+		return 0; 
+	}
 
 	nadsad::ascii::LexicalInfo lexicalInfo;
 	{
 		natl::TestTimer test("lexical analysis");
-		const natl::ConstAsciiStringView source = fileContents.toStringView();
+		const natl::ConstAsciiStringView source = simpleTestFile.value().toStringView();
 		lexicalInfo = nadsad::ascii::lexicalAnalysis(source);
 	}
 
@@ -31,11 +22,11 @@ int main() noexcept {
 
 	nadsad::ascii::Deserializer<natl::DummyDeserializeElementInfo, natl::DummyDeserializeErrorHandler> deserializer;
 	const natl::Bool sourceProccessed = deserializer.addSource(serializer.output());
-	if(sourceProccessed) {
+	if (sourceProccessed) {
 		auto deserializerScopeExpect = deserializer.begin();
-		if(deserializerScopeExpect.hasValue()) {
+		if (deserializerScopeExpect.hasValue()) {
 
-			deserializer.end(deserializerScopeExpect.value());
+			auto deserializerEndError = deserializer.end(deserializerScopeExpect.value());
 		}
 	} else {
 		nadsad::ascii::Serializer<1000, natl::SerializeFlag::pretty> errorSerializer{};

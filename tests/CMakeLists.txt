@@ -1,3 +1,4 @@
 ﻿include(testUtils.cmake)
 
 nadsad_Standard_Test(NadsadStandardTest standard)
+nadsad_Standard_Test(NadsadIntegerTest integer)
