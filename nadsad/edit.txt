@@ -1,8 +1,0 @@
-		if(str ==  "f32") {
-			return LiteralPostExtFloatType::f32;
-		} else if(str ==  "f64") {
-			return LiteralPostExtFloatType::f64;
-		} else {
-			return true;
-		}
-		

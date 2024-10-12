@@ -497,11 +497,18 @@ namespace nadsad::ascii {
 		constexpr void beginWriteVariant() noexcept {
 			storage += "variant{";
 			serializeTypeToString<SerializeType>(storage);
-			storage += '} {';
+			storage += '}';
+
+			newLine();
+			indent();
+			storage += "{";
+
 			newLine();
 			increaseIndent();
+			indent();
 		}
 		constexpr void endWriteVariant() noexcept {
+			newLine();
 			decreaseIndent();
 			indent();
 			storage += '}';

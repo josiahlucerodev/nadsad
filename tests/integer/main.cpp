@@ -25,6 +25,16 @@ int main() noexcept {
 	if (sourceProccessed) {
 		auto deserializerScopeExpect = deserializer.begin();
 		if (deserializerScopeExpect.hasValue()) {
+			auto deserializerScope = deserializerScopeExpect.value();
+
+			nadsad::ascii::LexicalInfo deserializedLexicalInfo;
+			natl::String sourceDst;
+
+			auto lexicalError = natl::deserializeReadNamedToDst<decltype(deserializer), nadsad::ascii::LexicalInfo>(
+				deserializer, deserializerScope, "lexical", deserializedLexicalInfo, sourceDst);
+			if(lexicalError.hasError()) {
+				return 1;
+			}
 
 			auto deserializerEndError = deserializer.end(deserializerScopeExpect.value());
 		}

@@ -85,7 +85,7 @@ namespace nadsad::ascii {
 			error_message_string_type errorMessage = "expected ";
 			errorMessage += tokenTypeToDebugString(expectedTokenType);
 			errorMessage += " but got ";
-			errorMessage += tokenTypeToDebugString(getCurrentToken());
+			errorMessage += tokenTypeToDebugString(getCurrentToken().tokenType);
 			return DeserializeErrorHandler(errorMessage, errorLocation, errorFlag);
 		}
 
@@ -99,11 +99,11 @@ namespace nadsad::ascii {
 			return natl::unexpected(unexpectedTokenHandler(expectedTokenType, errorLocation, errorFlag));
 		}
 
-		constexpr natl::Option<DeserializeErrorHandler> unexpectedEndOfSource(const natl::DeserializeErrorLocation errorLocation) noexcept {
+		constexpr natl::Unexpected<DeserializeErrorHandler> unexpectedEndOfSource(const natl::DeserializeErrorLocation errorLocation) noexcept {
 			return natl::unexpected(unexpectedEndOfSourceHandler(errorLocation));
 		}
 
-		constexpr natl::Unexpected<DeserializeErrorHandler> unexpectedTokenOption(const TokenType& expectedTokenType,
+		constexpr natl::Option<DeserializeErrorHandler> unexpectedTokenOption(const TokenType& expectedTokenType,
 			const natl::DeserializeErrorLocation errorLocation,
 			const natl::DeserializeErrorFlag errorFlag) noexcept {
 			return unexpectedTokenHandler(expectedTokenType, errorLocation, errorFlag);
@@ -174,7 +174,7 @@ namespace nadsad::ascii {
 		}
 		
 		template<typename OutputDstType>
-		constexpr natl::Bool formatStringLiteral(const natl::ConstAsciiStringView& stringLiteral, OutputDstType& output) noexcept {
+		constexpr void formatStringLiteral(const natl::ConstAsciiStringView& stringLiteral, OutputDstType& output) noexcept {
 			for (natl::Size i = 0; i < stringLiteral.size() ; i++) {
 				if (stringLiteral[i] == '\\') {
 					i++;
@@ -191,7 +191,7 @@ namespace nadsad::ascii {
 					if (!(i < stringLiteral.size())) { break; }
 					i++;
 				}
-				dst.pushBack(stringLiteral[i]);
+				dst.push_back(stringLiteral[i]);
 			}
 		}
 		template<typename DataStroageDstType>
@@ -211,10 +211,10 @@ namespace nadsad::ascii {
 		struct TestType;
 
 		template<> struct TestType<natl::SerializeI8> {
-			constexpr static natl::Option<DeserializeErrorHandler> test(Deserializer& deserializer, 
+			constexpr static natl::Option<DeserializeErrorHandler> test(Deserializer& deserializer,
 				const natl::DeserializeErrorLocation errorLocation) noexcept {
 				if (!deserializer.currentTokenIs(TokenType::keywordI8)) {
-					return unexpectedTokenOption(TokenType::keywordI8, errorLocation, natl::DeserializeErrorFlag::wrongType);
+					return deserializer.unexpectedTokenOption(TokenType::keywordI8, errorLocation, natl::DeserializeErrorFlag::wrongType);
 				}
 				return {};
 			}
@@ -223,7 +223,7 @@ namespace nadsad::ascii {
 			constexpr static natl::Option<DeserializeErrorHandler> test(Deserializer& deserializer,
 				const natl::DeserializeErrorLocation errorLocation) noexcept {
 				if (!deserializer.currentTokenIs(TokenType::keywordI16)) {
-					return unexpectedTokenOption(TokenType::keywordI16, errorLocation, natl::DeserializeErrorFlag::wrongType);
+					return deserializer.unexpectedTokenOption(TokenType::keywordI16, errorLocation, natl::DeserializeErrorFlag::wrongType);
 				}
 				return {};
 			}
@@ -232,7 +232,7 @@ namespace nadsad::ascii {
 			constexpr static natl::Option<DeserializeErrorHandler> test(Deserializer& deserializer,
 				const natl::DeserializeErrorLocation errorLocation) noexcept {
 				if (!deserializer.currentTokenIs(TokenType::keywordI32)) {
-					return unexpectedTokenOption(TokenType::keywordI32, errorLocation, natl::DeserializeErrorFlag::wrongType);
+					return deserializer.unexpectedTokenOption(TokenType::keywordI32, errorLocation, natl::DeserializeErrorFlag::wrongType);
 				}
 				return {};
 			}
@@ -241,7 +241,7 @@ namespace nadsad::ascii {
 			constexpr static natl::Option<DeserializeErrorHandler> test(Deserializer& deserializer,
 				const natl::DeserializeErrorLocation errorLocation) noexcept {
 				if (!deserializer.currentTokenIs(TokenType::keywordI64)) {
-					return unexpectedTokenOption(TokenType::keywordI64, errorLocation, natl::DeserializeErrorFlag::wrongType);
+					return deserializer.unexpectedTokenOption(TokenType::keywordI64, errorLocation, natl::DeserializeErrorFlag::wrongType);
 				}
 				return {};
 			}
@@ -250,7 +250,7 @@ namespace nadsad::ascii {
 			constexpr static natl::Option<DeserializeErrorHandler> test(Deserializer& deserializer,
 				const natl::DeserializeErrorLocation errorLocation) noexcept {
 				if (!deserializer.currentTokenIs(TokenType::keywordUI8)) {
-					return unexpectedTokenOption(TokenType::keywordUI8, errorLocation, natl::DeserializeErrorFlag::wrongType);
+					return deserializer.unexpectedTokenOption(TokenType::keywordUI8, errorLocation, natl::DeserializeErrorFlag::wrongType);
 				}
 				return {};
 			}
@@ -259,7 +259,7 @@ namespace nadsad::ascii {
 			constexpr static natl::Option<DeserializeErrorHandler> test(Deserializer& deserializer,
 				const natl::DeserializeErrorLocation errorLocation) noexcept {
 				if (!deserializer.currentTokenIs(TokenType::keywordUI16)) {
-					return unexpectedTokenOption(TokenType::keywordUI16, errorLocation, natl::DeserializeErrorFlag::wrongType);
+					return deserializer.unexpectedTokenOption(TokenType::keywordUI16, errorLocation, natl::DeserializeErrorFlag::wrongType);
 				}
 				return {};
 			}
@@ -268,7 +268,7 @@ namespace nadsad::ascii {
 			constexpr static natl::Option<DeserializeErrorHandler> test(Deserializer& deserializer,
 				const natl::DeserializeErrorLocation errorLocation) noexcept {
 				if (!deserializer.currentTokenIs(TokenType::keywordUI32)) {
-					return unexpectedTokenOption(TokenType::keywordUI32, errorLocation, natl::DeserializeErrorFlag::wrongType);
+					return deserializer.unexpectedTokenOption(TokenType::keywordUI32, errorLocation, natl::DeserializeErrorFlag::wrongType);
 				}
 				return {};
 			}
@@ -277,7 +277,7 @@ namespace nadsad::ascii {
 			constexpr static natl::Option<DeserializeErrorHandler> test(Deserializer& deserializer,
 				const natl::DeserializeErrorLocation errorLocation) noexcept {
 				if (!deserializer.currentTokenIs(TokenType::keywordUI64)) {
-					return unexpectedTokenOption(TokenType::keywordUI64, errorLocation, natl::DeserializeErrorFlag::wrongType);
+					return deserializer.unexpectedTokenOption(TokenType::keywordUI64, errorLocation, natl::DeserializeErrorFlag::wrongType);
 				}
 				return {};
 			}
@@ -287,7 +287,7 @@ namespace nadsad::ascii {
 			constexpr static natl::Option<DeserializeErrorHandler> test(Deserializer& deserializer,
 				const natl::DeserializeErrorLocation errorLocation) noexcept {
 				if (!deserializer.currentTokenIs(TokenType::keywordF32)) {
-					return unexpectedTokenOption(TokenType::keywordF32, errorLocation, natl::DeserializeErrorFlag::wrongType);
+					return deserializer.unexpectedTokenOption(TokenType::keywordF32, errorLocation, natl::DeserializeErrorFlag::wrongType);
 				}
 				return {};
 			}
@@ -296,7 +296,7 @@ namespace nadsad::ascii {
 			constexpr static natl::Option<DeserializeErrorHandler> test(Deserializer& deserializer,
 				const natl::DeserializeErrorLocation errorLocation) noexcept {
 				if (!deserializer.currentTokenIs(TokenType::keywordF64)) {
-					return unexpectedTokenOption(TokenType::keywordF64, errorLocation, natl::DeserializeErrorFlag::wrongType);
+					return deserializer.unexpectedTokenOption(TokenType::keywordF64, errorLocation, natl::DeserializeErrorFlag::wrongType);
 				}
 				return {};
 			}
@@ -305,7 +305,7 @@ namespace nadsad::ascii {
 			constexpr static natl::Option<DeserializeErrorHandler> test(Deserializer& deserializer,
 				const natl::DeserializeErrorLocation errorLocation) noexcept {
 				if (!deserializer.currentTokenIs(TokenType::keywordBlob)) {
-					return unexpectedTokenOption(TokenType::keywordBlob, errorLocation, natl::DeserializeErrorFlag::wrongType);
+					return deserializer.unexpectedTokenOption(TokenType::keywordBlob, errorLocation, natl::DeserializeErrorFlag::wrongType);
 				}
 				return {};
 			}
@@ -315,7 +315,7 @@ namespace nadsad::ascii {
 			constexpr static natl::Option<DeserializeErrorHandler> test(Deserializer& deserializer,
 				const natl::DeserializeErrorLocation errorLocation) noexcept {
 				if (!deserializer.currentTokenIs(TokenType::keywordChar)) {
-					return unexpectedTokenOption(TokenType::keywordChar, errorLocation, natl::DeserializeErrorFlag::wrongType);
+					return deserializer.unexpectedTokenOption(TokenType::keywordChar, errorLocation, natl::DeserializeErrorFlag::wrongType);
 				}
 				return {};
 			}
@@ -324,7 +324,7 @@ namespace nadsad::ascii {
 			constexpr static natl::Option<DeserializeErrorHandler> test(Deserializer& deserializer,
 				const natl::DeserializeErrorLocation errorLocation) noexcept {
 				if (!deserializer.currentTokenIs(TokenType::keywordStr)) {
-					return unexpectedTokenOption(TokenType::keywordStr, errorLocation, natl::DeserializeErrorFlag::wrongType);
+					return deserializer.unexpectedTokenOption(TokenType::keywordStr, errorLocation, natl::DeserializeErrorFlag::wrongType);
 				}
 				return {};
 			}
@@ -333,7 +333,7 @@ namespace nadsad::ascii {
 			constexpr static natl::Option<DeserializeErrorHandler> test(Deserializer& deserializer,
 				const natl::DeserializeErrorLocation errorLocation) noexcept {
 				if (!deserializer.currentTokenIs(TokenType::keywordBlob)) {
-					return unexpectedTokenOption(TokenType::keywordBlob, errorLocation, natl::DeserializeErrorFlag::wrongType);
+					return deserializer.unexpectedTokenOption(TokenType::keywordBlob, errorLocation, natl::DeserializeErrorFlag::wrongType);
 				}
 				return {};
 			}
@@ -342,11 +342,11 @@ namespace nadsad::ascii {
 			constexpr static natl::Option<DeserializeErrorHandler> test(Deserializer& deserializer,
 				const natl::DeserializeErrorLocation errorLocation) noexcept {
 				if (!deserializer.currentTokenIs(TokenType::keywordOp)) {
-					return unexpectedTokenOption(TokenType::keywordOp, errorLocation, natl::DeserializeErrorFlag::wrongType);
+					return deserializer.unexpectedTokenOption(TokenType::keywordOp, errorLocation, natl::DeserializeErrorFlag::wrongType);
 				}
 
 				if (!deserializer.nextToken()) {
-					return unexpectedEndOfSourceOption(errorLocation);
+					return deserializer.unexpectedEndOfSourceOption(errorLocation);
 				}
 				return TestType<SerializeType>::test(deserializer, errorLocation);
 			}
@@ -355,11 +355,11 @@ namespace nadsad::ascii {
 			constexpr static natl::Option<DeserializeErrorHandler> test(Deserializer& deserializer,
 				const natl::DeserializeErrorLocation errorLocation) noexcept {
 				if (!deserializer.currentTokenIs(TokenType::keywordEnum)) {
-					return unexpectedTokenOption(TokenType::keywordEnum, errorLocation, natl::DeserializeErrorFlag::wrongType);
+					return deserializer.unexpectedTokenOption(TokenType::keywordEnum, errorLocation, natl::DeserializeErrorFlag::wrongType);
 				}
 
 				if (!deserializer.nextToken()) {
-					return unexpectedEndOfSourceOption(errorLocation);
+					return deserializer.unexpectedEndOfSourceOption(errorLocation);
 				}
 				return TestType<BaseSerializeType>::test(deserializer, errorLocation);
 			}
@@ -368,7 +368,7 @@ namespace nadsad::ascii {
 			constexpr static natl::Option<DeserializeErrorHandler> test(Deserializer& deserializer,
 				const natl::DeserializeErrorLocation errorLocation) noexcept {
 				if (!deserializer.currentTokenIs(TokenType::keywordFile)) {
-					return unexpectedTokenOption(TokenType::keywordFile, errorLocation, natl::DeserializeErrorFlag::wrongType);
+					return deserializer.unexpectedTokenOption(TokenType::keywordFile, errorLocation, natl::DeserializeErrorFlag::wrongType);
 				}
 				return {};
 			}
@@ -377,18 +377,18 @@ namespace nadsad::ascii {
 			constexpr static natl::Option<DeserializeErrorHandler> test(Deserializer& deserializer,
 				const natl::DeserializeErrorLocation errorLocation) noexcept {
 				if (!deserializer.currentTokenIs(TokenType::keywordFarray)) {
-					return unexpectedTokenOption(TokenType::keywordFarray, errorLocation, natl::DeserializeErrorFlag::wrongType);
+					return deserializer.unexpectedTokenOption(TokenType::keywordFarray, errorLocation, natl::DeserializeErrorFlag::wrongType);
 				}
 
 				if (!deserializer.nextToken()) {
-					return unexpectedEndOfSourceOption(errorLocation);
+					return deserializer.unexpectedEndOfSourceOption(errorLocation);
 				}
 				if (!deserializer.currentTokenIs(TokenType::keywordFile)) {
-					return unexpectedTokenOption(TokenType::keywordFile, errorLocation, natl::DeserializeErrorFlag::wrongType);
+					return deserializer.unexpectedTokenOption(TokenType::keywordFile, errorLocation, natl::DeserializeErrorFlag::wrongType);
 				}
 
 				if (!deserializer.nextToken()) {
-					return unexpectedEndOfSourceOption(errorLocation);
+					return deserializer.unexpectedEndOfSourceOption(errorLocation);
 				}
 
 				natl::Option<DeserializeErrorHandler> infoTypeTest = TestType<ElementType>::test(deserializer, errorLocation);
@@ -397,26 +397,26 @@ namespace nadsad::ascii {
 				}
 
 				if (!deserializer.nextToken()) {
-					return unexpectedEndOfSourceOption(errorLocation);
+					return deserializer.unexpectedEndOfSourceOption(errorLocation);
 				}
 				if (!deserializer.currentTokenIs(TokenType::comma)) {
-					return unexpectedTokenOption(TokenType::comma, errorLocation, natl::DeserializeErrorFlag::wrongFormatting);
+					return deserializer.unexpectedTokenOption(TokenType::comma, errorLocation, natl::DeserializeErrorFlag::wrongFormatting);
 				}
 
 				if (!deserializer.nextToken()) {
-					return unexpectedEndOfSourceOption(errorLocation);
+					return deserializer.unexpectedEndOfSourceOption(errorLocation);
 				}
 				if (!deserializer.isTokenInteger(getCurrentToken().tokenType)) {
 					error_message_string_type errorMessage = "expected integer but got ";
-					errorMessage += tokenTypeToDebugString(getCurrentToken());
+					errorMessage += tokenTypeToDebugString(getCurrentToken().tokenType);
 					return DeserializeErrorHandler(errorMessage, errorLocation, natl::DeserializeErrorFlag::wrongType);
 				}
 
 				if (!deserializer.nextToken()) {
-					return unexpectedEndOfSourceOption(errorLocation);
+					return deserializer.unexpectedEndOfSourceOption(errorLocation);
 				}
 				if (!deserializer.currentTokenIs(TokenType::rightSquare)) {
-					return unexpectedTokenOption(TokenType::rightSquare, errorLocation, natl::DeserializeErrorFlag::wrongFormatting);
+					return deserializer.unexpectedTokenOption(TokenType::rightSquare, errorLocation, natl::DeserializeErrorFlag::wrongFormatting);
 				}
 
 				return {};
@@ -427,18 +427,18 @@ namespace nadsad::ascii {
 			constexpr static natl::Option<DeserializeErrorHandler> test(Deserializer& deserializer,
 				const natl::DeserializeErrorLocation errorLocation) noexcept {
 				if (!deserializer.currentTokenIs(TokenType::keywordArray)) {
-					return unexpectedTokenOption(TokenType::keywordArray, errorLocation, natl::DeserializeErrorFlag::wrongType);
+					return deserializer.unexpectedTokenOption(TokenType::keywordArray, errorLocation, natl::DeserializeErrorFlag::wrongType);
 				}
 
 				if (!deserializer.nextToken()) {
-					return unexpectedEndOfSourceOption(errorLocation);
+					return deserializer.unexpectedEndOfSourceOption(errorLocation);
 				}
 				if (!deserializer.currentTokenIs(TokenType::leftSquare)) {
-					return unexpectedTokenOption(TokenType::leftSquare, errorLocation, natl::DeserializeErrorFlag::wrongFormatting);
+					return deserializer.unexpectedTokenOption(TokenType::leftSquare, errorLocation, natl::DeserializeErrorFlag::wrongFormatting);
 				}
 
 				if (!deserializer.nextToken()) {
-					return unexpectedEndOfSourceOption(errorLocation);
+					return deserializer.unexpectedEndOfSourceOption(errorLocation);
 				}
 				natl::Option<DeserializeErrorHandler> infoTypeTest = TestType<ElementType>::test(deserializer, errorLocation);
 				if (infoTypeTest.hasValue()) {
@@ -446,10 +446,10 @@ namespace nadsad::ascii {
 				}
 
 				if (!deserializer.nextToken()) {
-					return unexpectedEndOfSourceOption(errorLocation);
+					return deserializer.unexpectedEndOfSourceOption(errorLocation);
 				}
 				if (!deserializer.currentTokenIs(TokenType::rightSquare)) {
-					return unexpectedTokenOption(TokenType::rightSquare, errorLocation, natl::DeserializeErrorFlag::wrongFormatting);
+					return deserializer.unexpectedTokenOption(TokenType::rightSquare, errorLocation, natl::DeserializeErrorFlag::wrongFormatting);
 				}
 
 				return {};
@@ -460,18 +460,18 @@ namespace nadsad::ascii {
 			constexpr static natl::Option<DeserializeErrorHandler> test(Deserializer& deserializer,
 				const natl::DeserializeErrorLocation errorLocation) noexcept {
 				if (!deserializer.currentTokenIs(TokenType::keywordDic)) {
-					return unexpectedTokenOption(TokenType::keywordDic, errorLocation, natl::DeserializeErrorFlag::wrongType);
+					return deserializer.unexpectedTokenOption(TokenType::keywordDic, errorLocation, natl::DeserializeErrorFlag::wrongType);
 				}
 
 				if (!deserializer.nextToken()) {
-					return unexpectedEndOfSourceOption(errorLocation);
+					return deserializer.unexpectedEndOfSourceOption(errorLocation);
 				}
 				if (!deserializer.currentTokenIs(TokenType::leftCurly)) {
-					return unexpectedTokenOption(TokenType::leftCurly, errorLocation, natl::DeserializeErrorFlag::wrongFormatting);
+					return deserializer.unexpectedTokenOption(TokenType::leftCurly, errorLocation, natl::DeserializeErrorFlag::wrongFormatting);
 				}
 
 				if (!deserializer.nextToken()) {
-					return unexpectedEndOfSourceOption(errorLocation);
+					return deserializer.unexpectedEndOfSourceOption(errorLocation);
 				}
 				natl::Option<DeserializeErrorHandler> keyTypeTest = TestType<KeyType>::test(deserializer, errorLocation);
 				if (keyTypeTest.hasValue()) {
@@ -479,14 +479,14 @@ namespace nadsad::ascii {
 				}
 
 				if (!deserializer.nextToken()) {
-					return unexpectedEndOfSourceOption(errorLocation);
+					return deserializer.unexpectedEndOfSourceOption(errorLocation);
 				}
 				if (!deserializer.currentTokenIs(TokenType::comma)) {
-					return unexpectedTokenOption(TokenType::comma, errorLocation, natl::DeserializeErrorFlag::wrongFormatting);
+					return deserializer.unexpectedTokenOption(TokenType::comma, errorLocation, natl::DeserializeErrorFlag::wrongFormatting);
 				}
 
 				if (!deserializer.nextToken()) {
-					return unexpectedEndOfSourceOption(errorLocation);
+					return deserializer.unexpectedEndOfSourceOption(errorLocation);
 				}
 				natl::Option<DeserializeErrorHandler> valueTypeTest = TestType<ValueType>::test(deserializer, errorLocation);
 				if (valueTypeTest.hasValue()) {
@@ -494,10 +494,10 @@ namespace nadsad::ascii {
 				}
 
 				if (!deserializer.nextToken()) {
-					return unexpectedEndOfSourceOption(errorLocation);
+					return deserializer.unexpectedEndOfSourceOption(errorLocation);
 				}
 				if (!deserializer.currentTokenIs(TokenType::rightCurly)) {
-					return unexpectedTokenOption(TokenType::rightCurly, errorLocation, natl::DeserializeErrorFlag::wrongFormatting);
+					return deserializer.unexpectedTokenOption(TokenType::rightCurly, errorLocation, natl::DeserializeErrorFlag::wrongFormatting);
 				}
 
 				return {};
@@ -509,15 +509,15 @@ namespace nadsad::ascii {
 				const natl::DeserializeErrorLocation errorLocation) noexcept {
 				if constexpr (Index != 0) {
 					if (!deserializer.nextToken()) {
-						return unexpectedEndOfSourceOption(errorLocation);
+						return deserializer.unexpectedEndOfSourceOption(errorLocation);
 					}
 					if (!deserializer.currentTokenIs(TokenType::comma)) {
-						return unexpectedTokenOption(TokenType::comma, errorLocation, natl::DeserializeErrorFlag::wrongFormatting);
+						return deserializer.unexpectedTokenOption(TokenType::comma, errorLocation, natl::DeserializeErrorFlag::wrongFormatting);
 					}
 				}
 
 				if (!deserializer.nextToken()) {
-					return unexpectedEndOfSourceOption(errorLocation);
+					return deserializer.unexpectedEndOfSourceOption(errorLocation);
 				}
 				natl::Option<DeserializeErrorHandler> memberTypeTest = TestType<MemberType>::test(deserializer, errorLocation);
 				if (memberTypeTest.hasValue()) {
@@ -535,14 +535,14 @@ namespace nadsad::ascii {
 			constexpr static natl::Option<DeserializeErrorHandler> test(Deserializer& deserializer,
 				const natl::DeserializeErrorLocation errorLocation) noexcept {
 				if (!deserializer.currentTokenIs(TokenType::keywordStruct)) {
-					return unexpectedTokenOption(TokenType::keywordStruct, errorLocation, natl::DeserializeErrorFlag::wrongType);
+					return deserializer.unexpectedTokenOption(TokenType::keywordStruct, errorLocation, natl::DeserializeErrorFlag::wrongType);
 				}
 
 				if (!deserializer.nextToken()) {
-					return unexpectedEndOfSourceOption(errorLocation);
+					return deserializer.unexpectedEndOfSourceOption(errorLocation);
 				}
 				if (!deserializer.currentTokenIs(TokenType::leftCurly)) {
-					return unexpectedTokenOption(TokenType::leftCurly, errorLocation, natl::DeserializeErrorFlag::wrongType);
+					return deserializer.unexpectedTokenOption(TokenType::leftCurly, errorLocation, natl::DeserializeErrorFlag::wrongType);
 				}
 
 				natl::Option<DeserializeErrorHandler> memberTypesTest = testTypeMembers<0, MemberTypes...>(deserializer, errorLocation);
@@ -551,10 +551,10 @@ namespace nadsad::ascii {
 				}
 
 				if (!deserializer.nextToken()) {
-					return unexpectedEndOfSourceOption(errorLocation);
+					return deserializer.unexpectedEndOfSourceOption(errorLocation);
 				}
 				if (!deserializer.currentTokenIs(TokenType::rightCurly)) {
-					return unexpectedTokenOption(TokenType::rightCurly, errorLocation, natl::DeserializeErrorFlag::wrongType);
+					return deserializer.unexpectedTokenOption(TokenType::rightCurly, errorLocation, natl::DeserializeErrorFlag::wrongType);
 				}
 
 				return {};
@@ -566,22 +566,22 @@ namespace nadsad::ascii {
 			constexpr static natl::Option<DeserializeErrorHandler> testTypeMembers(Deserializer& deserializer, const natl::DeserializeErrorLocation errorLocation) noexcept {
 				if constexpr (Index != 0) {
 					if (!deserializer.nextToken()) {
-						return unexpectedEndOfSourceOption(errorLocation);
+						return deserializer.unexpectedEndOfSourceOption(errorLocation);
 					}
 					if (!deserializer.currentTokenIs(TokenType::comma)) {
-						return unexpectedTokenOption(TokenType::comma, errorLocation, natl::DeserializeErrorFlag::wrongFormatting);
+						return deserializer.unexpectedTokenOption(TokenType::comma, errorLocation, natl::DeserializeErrorFlag::wrongFormatting);
 					}
 				}
 
 				if (!deserializer.nextToken()) {
-					return unexpectedEndOfSourceOption(errorLocation);
+					return deserializer.unexpectedEndOfSourceOption(errorLocation);
 				}
 				natl::Option<DeserializeErrorHandler> memberTypeTest = TestType<MemberType>::test(deserializer, errorLocation);
 				if (memberTypeTest.hasValue()) {
 					return memberTypeTest;
 				}
 
-				if constexpr(sizeof...(OtherMemberTypes) != 0) {
+				if constexpr (sizeof...(OtherMemberTypes) != 0) {
 					return testTypeMembers<Index + 1, OtherMemberTypes...>(deserializer, errorLocation);
 				} else {
 					return {};
@@ -591,29 +591,29 @@ namespace nadsad::ascii {
 			constexpr static natl::Option<DeserializeErrorHandler> test(Deserializer& deserializer,
 				const natl::DeserializeErrorLocation errorLocation) noexcept {
 				if (!deserializer.currentTokenIs(TokenType::keywordVariant)) {
-					return unexpectedTokenOption(TokenType::keywordVariant, errorLocation, natl::DeserializeErrorFlag::wrongType);
+					return deserializer.unexpectedTokenOption(TokenType::keywordVariant, errorLocation, natl::DeserializeErrorFlag::wrongType);
 				}
 
 				if (!deserializer.nextToken()) {
-					return unexpectedEndOfSourceOption(errorLocation);
+					return deserializer.unexpectedEndOfSourceOption(errorLocation);
 				}
 				if (!deserializer.currentTokenIs(TokenType::leftCurly)) {
-					return unexpectedTokenOption(TokenType::leftCurly, errorLocation, natl::DeserializeErrorFlag::wrongFormatting);
+					return deserializer.unexpectedTokenOption(TokenType::leftCurly, errorLocation, natl::DeserializeErrorFlag::wrongFormatting);
 				}
 
 				natl::Option<DeserializeErrorHandler> memberTypesTest = testTypeMembers<0, Types...>(deserializer, errorLocation);
 				if (memberTypesTest.hasValue()) {
 					return memberTypesTest;
 				}
-	
+
 				if (!deserializer.nextToken()) {
-					return unexpectedEndOfSourceOption(errorLocation);
+					return deserializer.unexpectedEndOfSourceOption(errorLocation);
 				}
 				if (!deserializer.currentTokenIs(TokenType::rightCurly)) {
-					return unexpectedTokenOption(TokenType::rightCurly, errorLocation, natl::DeserializeErrorFlag::wrongFormatting);
+					return deserializer.unexpectedTokenOption(TokenType::rightCurly, errorLocation, natl::DeserializeErrorFlag::wrongFormatting);
 				}
 
-				return true;
+				return {};
 			}
 		};
 	public:
@@ -636,7 +636,7 @@ namespace nadsad::ascii {
 			
 			DeserializeInfo<SerializeType> info;
 			if (!nextToken()) {
-				return unexpectedEndOfSource();
+				return unexpectedEndOfSource(errorLocation);
 			}
 
 			if(!currentTokenIs(TokenType::stringLiteral)) {
@@ -647,11 +647,11 @@ namespace nadsad::ascii {
 				errorMessage += name;
 				errorMessage += " but actual name was ";
 				formatStringLiteral<error_message_string_type>(currentTokenString(), errorMessage);
-				return natl::unexpected(DeserializeErrorHandler(errorMessage, natl::DeserializeErrorFlag::wrongName));
+				return natl::unexpected(DeserializeErrorHandler(errorMessage, errorLocation, natl::DeserializeErrorFlag::wrongName));
 			}
 
 			if(!nextToken()) {
-				return unexpectedEndOfSource();
+				return unexpectedEndOfSource(errorLocation);
 			}
 			natl::Option<DeserializeErrorHandler> typeError = TestType<SerializeType>::test(self(), errorLocation);
 			if(typeError.hasValue()) {
@@ -659,9 +659,9 @@ namespace nadsad::ascii {
 			}
 
 			if (!nextToken()) { 
-				return unexpectedEndOfSource();
+				return unexpectedEndOfSource(errorLocation);
 			}
-			if(!currentTokenIs(TokenType::colon)) {
+			if (!currentTokenIs(TokenType::colon)) {
 				return unexpectedToken(TokenType::colon, errorLocation, natl::DeserializeErrorFlag::wrongFormatting);
 			}
 
@@ -681,7 +681,7 @@ namespace nadsad::ascii {
 			}
 			if (isTokenInteger(getCurrentToken().tokenType)) {
 				error_message_string_type errorMessage = "expected integer but got ";
-				errorMessage += tokenTypeToDebugString(getCurrentToken());
+				errorMessage += tokenTypeToDebugString(getCurrentToken().tokenType);
 				return natl::unexpected(DeserializeErrorHandler(errorMessage, errorLocation, natl::DeserializeErrorFlag::wrongType));
 			}
 
@@ -692,7 +692,7 @@ namespace nadsad::ascii {
 
 				if (intType != PostExtIntType) {
 					error_message_string_type errorMessage = "expected ";
-					errorMessage += literalPostExtIntTypeToString(PostExtIntType);	
+					errorMessage += literalPostExtIntTypeToString(PostExtIntType);
 					errorMessage += "type on numeric but got ";
 					return natl::unexpected(DeserializeErrorHandler(errorMessage, errorLocation, natl::DeserializeErrorFlag::wrongType));
 				}
@@ -707,22 +707,22 @@ namespace nadsad::ascii {
 			switch (getCurrentToken().tokenType) {
 			case TokenType::decimalInteger:
 			case TokenType::decimalIntegerWithType:
-				value = natl::stringDecimalToIntExpect(intString);
+				value = natl::stringDecimalToInt<IntegerType>(intString);
 				break;
 			case TokenType::hexadecimalIntegerWithType:
 			case TokenType::hexadecimalInteger:
-				value = natl::stringHexadecimalToIntExpect(intString);
+				value = natl::stringHexadecimalToInt<IntegerType>(intString);
 				break;
 			case TokenType::binaryInteger:
 			case TokenType::binaryIntegerWithType:
-				value = natl::stringBinaryToIntExpect(intString);
+				value = natl::stringBinaryToInt<IntegerType>(intString);
 				break;
 			default:
 				natl::unreachable();
 			}
 
 
-			if (value.error()) {
+			if (value.hasError()) {
 				error_message_string_type errorMessage = "failed to parse numeric of type ";
 				errorMessage += tokenTypeToDebugString(getCurrentToken().tokenType);
 				return natl::unexpected(DeserializeErrorHandler(errorMessage, errorLocation, natl::DeserializeErrorFlag::valueParsing));
@@ -738,7 +738,7 @@ namespace nadsad::ascii {
 			}
 			if (isTokenFloat(getCurrentToken().tokenType)) {
 				error_message_string_type errorMessage = "expected float but got ";
-				errorMessage += tokenTypeToDebugString(getCurrentToken());
+				errorMessage += tokenTypeToDebugString(getCurrentToken().tokenType);
 				return natl::unexpected(DeserializeErrorHandler(errorMessage, errorLocation, natl::DeserializeErrorFlag::wrongType));
 			}
 
@@ -785,36 +785,36 @@ namespace nadsad::ascii {
 
 	public:
 		[[nodiscard]] constexpr natl::Expect<natl::i8, DeserializeErrorHandler> readI8(DeserializeInfo<natl::SerializeI8>& info) noexcept {
-			return readInteger<natl::i8, LiteralPostExtIntType::i8>(info, natl::DeserializeErrorLocation::readI8);
+			return readInteger<natl::i8, LiteralPostExtIntType::i8>(natl::DeserializeErrorLocation::readI8);
 		}
 		[[nodiscard]] constexpr natl::Expect<natl::i16, DeserializeErrorHandler> readI16(DeserializeInfo<natl::SerializeI16>& info) noexcept {
-			return readInteger<natl::i16, LiteralPostExtIntType::i16>(info, natl::DeserializeErrorLocation::readI16);
+			return readInteger<natl::i16, LiteralPostExtIntType::i16>(natl::DeserializeErrorLocation::readI16);
 		}
 		[[nodiscard]] constexpr natl::Expect<natl::i32, DeserializeErrorHandler> readI32(DeserializeInfo<natl::SerializeI32>& info) noexcept {
-			return readInteger<natl::i32, LiteralPostExtIntType::i32>(info, natl::DeserializeErrorLocation::readI32);
+			return readInteger<natl::i32, LiteralPostExtIntType::i32>(natl::DeserializeErrorLocation::readI32);
 		}
 		[[nodiscard]] constexpr natl::Expect<natl::i64, DeserializeErrorHandler> readI64(DeserializeInfo<natl::SerializeI64>& info) noexcept {
-			return readInteger<natl::i64, LiteralPostExtIntType::i64>(info, natl::DeserializeErrorLocation::readI64);
+			return readInteger<natl::i64, LiteralPostExtIntType::i64>(natl::DeserializeErrorLocation::readI64);
 		}
 
 		[[nodiscard]] constexpr natl::Expect<natl::ui8, DeserializeErrorHandler> readUI8(DeserializeInfo<natl::SerializeUI8>& info) noexcept {
-			return readInteger<natl::ui8, LiteralPostExtIntType::ui8>(info, natl::DeserializeErrorLocation::readUI8);
+			return readInteger<natl::ui8, LiteralPostExtIntType::ui8>(natl::DeserializeErrorLocation::readUI8);
 		}
 		[[nodiscard]] constexpr natl::Expect<natl::ui16, DeserializeErrorHandler> readUI16(DeserializeInfo<natl::SerializeUI16>& info) noexcept {
-			return readInteger<natl::ui16, LiteralPostExtIntType::ui16>(info, natl::DeserializeErrorLocation::readUI16);
+			return readInteger<natl::ui16, LiteralPostExtIntType::ui16>(natl::DeserializeErrorLocation::readUI16);
 		}
 		[[nodiscard]] constexpr natl::Expect<natl::ui32, DeserializeErrorHandler> readUI32(DeserializeInfo<natl::SerializeUI32>& info) noexcept {
-			return readInteger<natl::ui32, LiteralPostExtIntType::ui32>(info, natl::DeserializeErrorLocation::readUI32);
+			return readInteger<natl::ui32, LiteralPostExtIntType::ui32>(natl::DeserializeErrorLocation::readUI32);
 		}
 		[[nodiscard]] constexpr natl::Expect<natl::ui64, DeserializeErrorHandler> readUI64(DeserializeInfo<natl::SerializeUI64>& info) noexcept {
-			return readInteger<natl::ui64, LiteralPostExtIntType::ui64>(info, natl::DeserializeErrorLocation::readUI64);
+			return readInteger<natl::ui64, LiteralPostExtIntType::ui64>(natl::DeserializeErrorLocation::readUI64);
 		}
 
 		[[nodiscard]] constexpr natl::Expect<natl::f32, DeserializeErrorHandler> readF32(DeserializeInfo<natl::SerializeF32>& info) noexcept {
-			return readFloat<natl::f32, LiteralPostExtFloatType::f32>(info, natl::DeserializeErrorLocation::readF32);
+			return readFloat<natl::f32, LiteralPostExtFloatType::f32>(natl::DeserializeErrorLocation::readF32);
 		}
 		[[nodiscard]] constexpr natl::Expect<natl::f64, DeserializeErrorHandler> readF64(DeserializeInfo<natl::SerializeF64>& info) noexcept {
-			return readFloat<natl::f64, LiteralPostExtFloatType::f64>(info, natl::DeserializeErrorLocation::readF64);
+			return readFloat<natl::f64, LiteralPostExtFloatType::f64>(natl::DeserializeErrorLocation::readF64);
 		}
 
 		[[nodiscard]] constexpr natl::Expect<natl::Bool, DeserializeErrorHandler> readBool(DeserializeInfo<natl::SerializeBool>& info) noexcept {
@@ -825,11 +825,11 @@ namespace nadsad::ascii {
 
 			if (currentTokenIs(TokenType::keywordTrue)) {
 				return true;
-			} else if(currentTokenIs(TokenType::keywordFalse)) {
+			} else if (currentTokenIs(TokenType::keywordFalse)) {
 				return false;
 			} else {
 				error_message_string_type errorMessage = "expected true or false literal but got ";
-				errorMessage += tokenTypeToDebugString(getCurrentToken());
+				errorMessage += tokenTypeToDebugString(getCurrentToken().tokenType);
 				return natl::unexpected(DeserializeErrorHandler(errorMessage, errorLocation, natl::DeserializeErrorFlag::wrongType));
 			}
 		}
@@ -844,7 +844,7 @@ namespace nadsad::ascii {
 			}
 
 			const natl::ConstAsciiStringView charLiteral = currentTokenString();
-			if(charLiteral.size() == 1) {
+			if (charLiteral.size() == 1) {
 				return charLiteral[0];
 			} else {
 				return charLiteral[1];
@@ -854,8 +854,8 @@ namespace nadsad::ascii {
 		template<typename StringDstType = error_message_string_type>
 		[[nodiscard]] constexpr natl::Expect<StringDstType, DeserializeErrorHandler> readStr(DeserializeInfo<natl::SerializeStr>& info) noexcept {
 			constexpr natl::DeserializeErrorLocation errorLocation = natl::DeserializeErrorLocation::readStr;
-			if (!nextToken(errorLocation)) {
-				return unexpectedEndOfSource();
+			if (!nextToken()) {
+				return unexpectedEndOfSource(errorLocation);
 			}
 			if (!currentTokenIs(TokenType::stringLiteral)) {
 				return unexpectedToken(TokenType::stringLiteral, errorLocation, natl::DeserializeErrorFlag::wrongType);
@@ -878,16 +878,16 @@ namespace nadsad::ascii {
 			readFile(DeserializeInfo<natl::SerializeFile>& info) noexcept {
 			constexpr natl::DeserializeErrorLocation errorLocation = natl::DeserializeErrorLocation::readFile;
 
-			if (!nextToken(errorLocation)) {
-				return unexpectedEndOfSource();
+			if (!nextToken()) {
+				return unexpectedEndOfSource(errorLocation);
 			}
 			if (!currentTokenIs(TokenType::stringLiteral)) {
 				return unexpectedToken(TokenType::stringLiteral, errorLocation, natl::DeserializeErrorFlag::wrongType);
 			}
 			const natl::ConstAsciiStringView fileNameStringLiteral = currentTokenString();
 
-			if (!nextToken(errorLocation)) {
-				return unexpectedEndOfSource();
+			if (!nextToken()) {
+				return unexpectedEndOfSource(errorLocation);
 			}
 			if (!currentTokenIs(TokenType::dataStorage)) {
 				return unexpectedToken(TokenType::dataStorage, errorLocation, natl::DeserializeErrorFlag::wrongType);
@@ -902,7 +902,7 @@ namespace nadsad::ascii {
 
 		template<typename BaseSerilizeType, typename Functor>
 			requires(natl::IsEnumBaseSerializeTypeC<BaseSerilizeType> 
-				&& natl::IsStringToSerializeFlagConvertFunctor<natl::BasicSerializeTypeToType<Functor>>)
+				&& natl::IsStringToSerializeFlagConvertFunctor<Functor, natl::BasicSerializeTypeToType<BaseSerilizeType>>)
 		[[nodiscard]] constexpr natl::Expect<natl::BasicSerializeTypeToType<BaseSerilizeType>, DeserializeErrorHandler>
 			readEnum(DeserializeInfo<natl::SerializeEnum<BaseSerilizeType>>& info, Functor&& stringToEnum) noexcept {
 			using enum_integer_type = natl::BasicSerializeTypeToType<BaseSerilizeType>;
@@ -956,7 +956,7 @@ namespace nadsad::ascii {
 				}
 			} else {
 				error_message_string_type errorMessage = "expected string literal or integer but got ";
-				errorMessage += tokenTypeToDebugString(getCurrentToken());
+				errorMessage += tokenTypeToDebugString(getCurrentToken().tokenType);
 				return natl::unexpected(DeserializeErrorHandler(errorMessage, errorLocation, natl::DeserializeErrorFlag::wrongType));
 			}
 		}
@@ -973,7 +973,7 @@ namespace nadsad::ascii {
 			natl::Size index = tokenIndex + 1;
 			if (!(index < lexicalInfo.tokens.size())) {
 				error_message_string_type errorMessage = "expected more tokens after array being";
-				errorMessage += tokenTypeToDebugString(getCurrentToken());
+				errorMessage += tokenTypeToDebugString(getCurrentToken().tokenType);
 				return natl::unexpected(DeserializeErrorHandler(errorMessage, errorLocation, natl::DeserializeErrorFlag::wrongFormatting));
 			}
 
@@ -982,18 +982,18 @@ namespace nadsad::ascii {
 				return 0;
 			}
 
-			natl::Size infoCount = 0;
+			natl::Size count = 0;
 			while (lexicalInfo.tokens[index].tokenType != TokenType::rightCurly) {
 				const Token& token = lexicalInfo.tokens[index];
 				switch (token.tokenType) {
 				break; case TokenType::comma:
-					infoCount++;
+					count++;
 					break;
 				case TokenType::leftCurly:
 				case TokenType::leftSquare:
 					if (token.size == 0) {
 						error_message_string_type errorMessage = "scope error with token ";
-						errorMessage += tokenTypeToDebugString(getCurrentToken());
+						errorMessage += tokenTypeToDebugString(getCurrentToken().tokenType);
 						return natl::unexpected(DeserializeErrorHandler(errorMessage, errorLocation, natl::DeserializeErrorFlag::wrongFormatting));
 					}
 					index += token.size;
@@ -1001,13 +1001,14 @@ namespace nadsad::ascii {
 					break;
 				}
 			}
+			return count;
 		}
 		[[nodiscard]] constexpr natl::Option<DeserializeErrorHandler> endReadContainer(const natl::DeserializeErrorLocation errorLocation) noexcept {
 			if (!nextToken()) {
-				return unexpectedEndOfSource(errorLocation);
+				return unexpectedEndOfSourceOption(errorLocation);
 			}
 			if (!currentTokenIs(TokenType::leftCurly)) {
-				return unexpectedToken(TokenType::leftCurly, errorLocation, natl::DeserializeErrorFlag::wrongFormatting);
+				return unexpectedTokenOption(TokenType::leftCurly, errorLocation, natl::DeserializeErrorFlag::wrongFormatting);
 			}
 
 			return {};
@@ -1015,10 +1016,10 @@ namespace nadsad::ascii {
 
 		[[nodiscard]] constexpr natl::Option<DeserializeErrorHandler> endReadContainerElement(const natl::DeserializeErrorLocation errorLocation) {
 			if (!nextToken()) {
-				return unexpectedEndOfSource(errorLocation);
+				return unexpectedEndOfSourceOption(errorLocation);
 			}
 			if (!currentTokenIs(TokenType::comma)) {
-				return unexpectedToken(TokenType::comma, errorLocation, natl::DeserializeErrorFlag::wrongFormatting);
+				return unexpectedTokenOption(TokenType::comma, errorLocation, natl::DeserializeErrorFlag::wrongFormatting);
 			}
 
 			return {};
@@ -1044,49 +1045,49 @@ namespace nadsad::ascii {
 			return DeserializeInfo<SerializeElementType>{};
 		}
 		template<typename SerializeElementType>
-		constexpr natl::Option<DeserializeErrorHandler> endReadArrayElement(DeserializeInfo<SerializeElementType> info) {
+		constexpr natl::Option<DeserializeErrorHandler> endReadArrayElement(DeserializeInfo<SerializeElementType>& info) {
 			return endReadContainerElement(natl::DeserializeErrorLocation::endReadArrayElement);
 		};
 
 		//dic
 		template<typename SerializeKeyType, typename SerializeValueType>
 		[[nodiscard]] constexpr natl::Expect<natl::Size, DeserializeErrorHandler> beginReadDic(
-			DeserializeInfo<natl::SerializeDic<SerializeKeyType, SerializeValueType>> info) noexcept {
+			DeserializeInfo<natl::SerializeDic<SerializeKeyType, SerializeValueType>>& info) noexcept {
 			return beginReadContainer(natl::DeserializeErrorLocation::beginReadDic);
 		}
 		template<typename SerializeKeyType, typename SerializeValueType>
 		[[nodiscard]] constexpr natl::Option<DeserializeErrorHandler> endReadDic(
-			DeserializeInfo<natl::SerializeDic<SerializeKeyType, SerializeValueType>> info) {
+			DeserializeInfo<natl::SerializeDic<SerializeKeyType, SerializeValueType>>& info) {
 			return endReadContainer(natl::DeserializeErrorLocation::endReadDic);
 		}
 
 		template<typename SerializeKeyType, typename SerializeValueType>
 		[[nodiscard]] constexpr natl::Expect<DeserializeInfo<natl::SerializeDicElement<SerializeKeyType, SerializeValueType>>, DeserializeErrorHandler> beginReadDicElement(
-			DeserializeInfo<natl::SerializeDic<SerializeKeyType, SerializeValueType>> info) noexcept {
+			DeserializeInfo<natl::SerializeDic<SerializeKeyType, SerializeValueType>>& info) noexcept {
 			return DeserializeInfo<natl::SerializeDicElement<SerializeKeyType, SerializeValueType>>{};
 		}
 
 		template<typename SerializeKeyType, typename SerializeValueType>
 		[[nodiscard]] constexpr natl::Option<DeserializeErrorHandler> endReadDicElement(
-			DeserializeInfo<natl::SerializeDicElement<SerializeKeyType, SerializeValueType>> info) noexcept {
+			DeserializeInfo<natl::SerializeDicElement<SerializeKeyType, SerializeValueType>>& info) noexcept {
 			return endReadContainerElement(natl::DeserializeErrorLocation::endReadDicElement);
 		}
 
 		template<typename SerializeKeyType, typename SerializeValueType>
 		[[nodiscard]] constexpr natl::Option<DeserializeErrorHandler> readDicKey(
-			DeserializeInfo<natl::SerializeDicElement<SerializeKeyType, SerializeValueType>> info) noexcept {
+			DeserializeInfo<natl::SerializeDicElement<SerializeKeyType, SerializeValueType>>& info) noexcept {
 			return{};
 		}
 
 		template<typename SerializeKeyType, typename SerializeValueType>
 		[[nodiscard]] constexpr natl::Option<DeserializeErrorHandler> readDicValue(
-			DeserializeInfo<natl::SerializeDicElement<SerializeKeyType, SerializeValueType>> info) noexcept {
+			DeserializeInfo<natl::SerializeDicElement<SerializeKeyType, SerializeValueType>>& info) noexcept {
 			constexpr natl::DeserializeErrorLocation errorLocation = natl::DeserializeErrorLocation::readDicValue;
 			if (!nextToken()) {
-				return unexpectedEndOfSource(errorLocation);
+				return unexpectedEndOfSourceOption(errorLocation);
 			}
 			if (!currentTokenIs(TokenType::colon)) {
-				return unexpectedToken(TokenType::colon, errorLocation, natl::DeserializeErrorFlag::wrongFormatting);
+				return unexpectedTokenOption(TokenType::colon, errorLocation, natl::DeserializeErrorFlag::wrongFormatting);
 			}
 			return {};
 		}
@@ -1106,7 +1107,7 @@ namespace nadsad::ascii {
 		}
 		template<typename... SerializeMemberTypes>
 		[[nodiscard]] constexpr natl::Option<DeserializeErrorHandler> endReadStruct(
-			DeserializeInfo<natl::SerializeStruct<SerializeMemberTypes...>> info) {
+			DeserializeInfo<natl::SerializeStruct<SerializeMemberTypes...>>& info) {
 			return endReadContainer(natl::DeserializeErrorLocation::endReadStruct);
 		}
 
@@ -1114,7 +1115,7 @@ namespace nadsad::ascii {
 		template<typename SerializeType, typename... VariantSerializeTypes>
 			requires(natl::TemplatePackHasElementC<natl::IsSameV, SerializeType, VariantSerializeTypes...>)
 		[[nodiscard]] constexpr natl::Expect<DeserializeInfo<SerializeType>, DeserializeErrorHandler>
-			beginReadVaraint(DeserializeInfo<natl::SerializeVariant<VariantSerializeTypes...>> info) {
+			beginReadVaraint(DeserializeInfo<natl::SerializeVariant<VariantSerializeTypes...>>& info) {
 			constexpr natl::DeserializeErrorLocation errorLocation = natl::DeserializeErrorLocation::beginReadVariant;
 			if (!nextToken()) {
 				return unexpectedEndOfSource(errorLocation);
@@ -1148,17 +1149,19 @@ namespace nadsad::ascii {
 			if (!currentTokenIs(TokenType::leftCurly)) {
 				return unexpectedToken(TokenType::leftCurly, errorLocation, natl::DeserializeErrorFlag::wrongFormatting);
 			}
+
+			return DeserializeInfo<SerializeType>{};
 		}
 
-		template<typename SerializeType, typename... VariantSerializeTypes>
+		template<typename SerializeType>
 		[[nodiscard]] constexpr natl::Option<DeserializeErrorHandler>
-			endReadVaraint(DeserializeInfo<natl::SerializeVariant<VariantSerializeTypes...>> info) {
+			endReadVariant(DeserializeInfo<SerializeType>& info) {
 			constexpr natl::DeserializeErrorLocation errorLocation = natl::DeserializeErrorLocation::endReadVariant;
 			if (!nextToken()) {
-				return unexpectedEndOfSource(errorLocation);
+				return unexpectedEndOfSourceOption(errorLocation);
 			}
 			if (!currentTokenIs(TokenType::rightCurly)) {
-				return unexpectedToken(TokenType::rightCurly, errorLocation, natl::DeserializeErrorFlag::wrongFormatting);
+				return unexpectedTokenOption(TokenType::rightCurly, errorLocation, natl::DeserializeErrorFlag::wrongFormatting);
 			}
 			return {};
 		}
