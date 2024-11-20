@@ -1,0 +1,22 @@
+	template<typename IntType>
+		requires(IsBuiltInIntegerC<Decay<IntType>>)
+	constexpr Bool intInBytesCheck(const Size size) noexcept {
+		using decayed_uint_type = Decay<IntType>;
+		if constexpr (IsSame<i8, IntType>) {
+			return i8InBytesCheck(size);
+		} else if constexpr (IsSame<i16, IntType>) {
+			return i16InBytesCheck(size);
+		} else if constexpr (IsSame<i32, IntType>) {
+			return i32InBytesCheck(size);
+		} else if constexpr (IsSame<ui64, IntType>) {
+			return i64InBytesCheck(size);
+		} else if constexpr (IsSame<ui8, IntType>) {
+			return ui8InBytesCheck(size);
+		} else if constexpr (IsSame<ui16, IntType>) {
+			return ui16InBytesCheck(size);
+		} else if constexpr (IsSame<ui32, IntType>) {
+			return ui32InBytesCheck(size);
+		} else {
+			return ui64InBytesCheck(size);
+		}
+	}

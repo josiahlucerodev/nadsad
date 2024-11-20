@@ -54,7 +54,7 @@ namespace nadsad::ascii {
 		template<> struct SerializeTypeToString<natl::SerializeUI64> {
 			template<typename OutputDstType>
 			constexpr static void write(OutputDstType& output) noexcept {
-				output += "i64";
+				output += "ui64";
 			}
 		};
 
@@ -165,7 +165,7 @@ namespace nadsad::ascii {
 			}
 		};
 
-		template<typename... Types> struct SerializeTypeToString<natl::SerializeVariant<Types...>> {
+		template<typename IndexSerializeType, typename... Types> struct SerializeTypeToString<natl::SerializeVariant<IndexSerializeType, Types...>> {
 			template<typename OutputDstType, typename Type, natl::Size Index>
 			constexpr static void writeType(OutputDstType& output) noexcept {
 				if constexpr (Index != 0) {
@@ -175,7 +175,9 @@ namespace nadsad::ascii {
 			}
 			template<typename OutputDstType>
 			constexpr static void write(OutputDstType& output) {
-				output += "variant{";
+				output += "variant ";
+				SerializeTypeToString<IndexSerializeType>::template write<OutputDstType>(output);
+				output += " {";
 				[&] <natl::Size... Indices>(natl::IndexSequence<Indices...>) noexcept {
 					(writeType<OutputDstType, Types, Indices>(output), ...);
 				}(natl::MakeIndexSequence<sizeof...(Types)>{});
@@ -381,12 +383,12 @@ namespace nadsad::ascii {
 			storage += '\"';
 		}
 
-		constexpr void writeFile(const natl::ConstAsciiStringView fileName, const natl::ArrayView<const natl::Byte> data) noexcept {
+		constexpr void writeFile(const natl::ConstAsciiStringView fileName, const natl::ConstArrayView<natl::Byte> data) noexcept {
 			writeStr(fileName);
 			writeBlob(data);
 		}
 
-		constexpr void writeBlob(const natl::ArrayView<const natl::Byte> data) noexcept {
+		constexpr void writeBlob(const natl::ConstArrayView<natl::Byte> data) noexcept {
 			storage += '(';
 
 			for (const natl::Byte part : data) {
@@ -406,11 +408,13 @@ namespace nadsad::ascii {
 			storage += ')';
 			newLine();
 		}
-		template<typename EnumIntegerType, typename Functor>
-			requires(natl::IsBuiltInIntegerC<EnumIntegerType> && natl::IsSerializeFlagToStringConvertFunctor<Functor, EnumIntegerType>)
-		constexpr void writeEnum(const EnumIntegerType value, Functor&& toString) noexcept {
+		template<typename BaseSerializeType>
+			requires(natl::IsEnumBaseSerializeTypeC<BaseSerializeType>)
+		constexpr void writeEnum(
+			const natl::BasicSerializeTypeToType<BaseSerializeType> intValue, 
+			const natl::ConstAsciiStringView& strValue) noexcept {
 			storage += '\"';
-			storage += toString(value);
+			storage += strValue;
 			storage += '\"';
 		}
 
@@ -492,11 +496,22 @@ namespace nadsad::ascii {
 			storage += '}';
 		}
 
-		template<typename SerializeType>
-			requires(natl::IsSerializeType<SerializeType>)
-		constexpr void beginWriteVariant() noexcept {
+		template<typename VariantSerializeType>
+			requires(natl::IsSerializeVariantC<VariantSerializeType>)
+		constexpr void writeEmptyVariant() noexcept {
+			storage += "null";
+		}
+
+		template<typename VariantSerializeType, natl::Size Index>
+			requires(natl::IsSerializeVariantC<VariantSerializeType>)
+		constexpr void beginWriteVariant(const natl::ConstAsciiStringView& strValue) noexcept {
 			storage += "variant{";
-			serializeTypeToString<SerializeType>(storage);
+			serializeTypeToString<typename VariantSerializeType::index_size>(storage);
+			storage += " ";
+			writeStr(strValue);
+			storage += ",";
+			space();
+			serializeTypeToString<typename VariantSerializeType::types::template at<Index>>(storage);
 			storage += '}';
 
 			newLine();

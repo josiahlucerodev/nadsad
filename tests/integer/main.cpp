@@ -1,6 +1,7 @@
 
 //nadsad
 #include "../testUtils.h"
+#include <natl/processing/serializationUtils.h>
 #include <nadsad/nadsad.h>
 
 int main() noexcept {
@@ -20,7 +21,7 @@ int main() noexcept {
 	natl::serializeWriteNamed(serializer, "lexical", lexicalInfo);
 	natl::println(serializer.output());
 
-	nadsad::ascii::Deserializer<natl::DummyDeserializeElementInfo, natl::DummyDeserializeErrorHandler> deserializer;
+	nadsad::ascii::Deserializer<natl::DummyDeserializeElementInfo, natl::FullDeserializeErrorHandler<8>> deserializer;
 	const natl::Bool sourceProccessed = deserializer.addSource(serializer.output());
 	if (sourceProccessed) {
 		auto deserializerScopeExpect = deserializer.begin();
@@ -33,7 +34,13 @@ int main() noexcept {
 			auto lexicalError = natl::deserializeReadNamedToDst<decltype(deserializer), nadsad::ascii::LexicalInfo>(
 				deserializer, deserializerScope, "lexical", deserializedLexicalInfo, sourceDst);
 			if(lexicalError.hasError()) {
-				return 1;
+
+				nadsad::ascii::Serializer<1000, natl::SerializeFlag::pretty> errorSerializer{};
+				deserializer.serializeSourceProccessState(errorSerializer);
+				natl::println(errorSerializer.output());
+
+				natl::println(lexicalError.error().toMessage<natl::String256>());
+				return 0;
 			}
 
 			auto deserializerEndError = deserializer.end(deserializerScopeExpect.value());
@@ -41,6 +48,8 @@ int main() noexcept {
 	} else {
 		nadsad::ascii::Serializer<1000, natl::SerializeFlag::pretty> errorSerializer{};
 		deserializer.serializeSourceProccessState(errorSerializer);
+
+
 		natl::println(errorSerializer.output());
 	}
 }

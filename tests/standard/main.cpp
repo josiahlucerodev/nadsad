@@ -1,6 +1,7 @@
 
 //nadsad
 #include "../testUtils.h"
+#include <natl/processing/serializationUtils.h>
 #include <nadsad/nadsad.h>
 
 
@@ -29,7 +30,7 @@ int main() noexcept {
 	natl::serializeWriteNamed(serializer, "lexical", lexicalInfo);
 	natl::println(serializer.output());
 
-	nadsad::ascii::Deserializer<natl::DummyDeserializeElementInfo, natl::DummyDeserializeErrorHandler> deserializer;
+	nadsad::ascii::Deserializer<natl::DummyDeserializeElementInfo, natl::FullDeserializeErrorHandler<8>> deserializer;
 	const natl::Bool sourceProccessed = deserializer.addSource(serializer.output());
 	if(sourceProccessed) {
 		auto deserializerScopeExpect = deserializer.begin();
