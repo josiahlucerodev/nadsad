@@ -1,7 +1,7 @@
 set(HEADER_FILES
-nadsad/assciFormat/deserializer.h
-nadsad/assciFormat/lexer.h
-nadsad/assciFormat/serializer.h
+nadsad/asciiFormat/deserializer.h
+nadsad/asciiFormat/lexer.h
+nadsad/asciiFormat/serializer.h
 nadsad/nadsad.h
 )
 

@@ -1,6 +1,6 @@
 #pragma once 
 
 //own
-#include "assciFormat\serializer.h"
-#include "assciFormat\deserializer.h"
-#include "assciFormat\lexer.h"
+#include "asciiFormat\serializer.h"
+#include "asciiFormat\deserializer.h"
+#include "asciiFormat\lexer.h"
