@@ -202,8 +202,9 @@ namespace nadsad::ascii {
 		using allocator_type = Alloc::template rebind_alloc<natl::Ascii>;
 		using code_point_type = natl::Ascii;
 		using container_type = natl::AsciiStringByteSize<smallBufferByteSize, allocator_type>;
-		using mapping_allocator_type = Alloc::template rebind_alloc<natl::String32>;
-		using mapping_container_type = natl::SmallDynArray<natl::String32, (smallBufferByteSize / 100 + 10), mapping_allocator_type>;
+
+		constexpr static inline natl::Size smallBufferSize = smallBufferByteSize;
+		constexpr static inline natl::SerializeFlag flag = SerializeFlag;
 	private:
 		container_type storage;
 		natl::Size indentValue = 0;
