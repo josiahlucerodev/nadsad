@@ -36,8 +36,8 @@ namespace nadsad::ascii {
 		template<typename Serializer>
 			requires(natl::IsSerializerC<Serializer>)
 		constexpr void serializeErrors(Serializer& serializer) noexcept {
-			using as_type = natl::SerializeArray<natl::SerializeTypeOf<nadsad::ascii::LexicalError>>;
-			serializer.beginWrite<as_type>("LexcialErrors");
+			using as_type = natl::SerializeArray<nadsad::ascii::LexicalError>;
+			serializer.template beginWrite<as_type>("LexcialErrors");
 
 			serializer.writeValue();
 			if (lexicalInfo.errors.empty()) {
@@ -96,13 +96,13 @@ namespace nadsad::ascii {
 
 		constexpr DeserializeErrorHandler unexpectedTokenHandler(const TokenType& expectedTokenType,
 			const natl::DeserializeErrorLocation errorLocation,
-			const natl::DeserializeErrorFlag errorFlag) noexcept {
+			const natl::DeserializeErrorFlag deserializeErrorFlag) noexcept {
 			error_message_string_type errorMessage = "expected ";
 			errorMessage += tokenTypeToDebugString(expectedTokenType);
 			errorMessage += " but got ";
 			errorMessage += tokenTypeToDebugString(getCurrentToken().type);
 			return DeserializeErrorHandler(errorMessage, getErrorLocationDetails(), 
-				errorLocation, errorFlag);
+				errorLocation, deserializeErrorFlag);
 		}
 
 		constexpr DeserializeErrorHandler unexpectedEndOfSourceHandler(const natl::DeserializeErrorLocation errorLocation) noexcept {
@@ -112,8 +112,8 @@ namespace nadsad::ascii {
 
 		constexpr natl::Unexpected<DeserializeErrorHandler> unexpectedToken(const TokenType& expectedTokenType,
 			const natl::DeserializeErrorLocation errorLocation,
-			const natl::DeserializeErrorFlag errorFlag) noexcept {
-			return natl::unexpected(unexpectedTokenHandler(expectedTokenType, errorLocation, errorFlag));
+			const natl::DeserializeErrorFlag deserializeErrorFlag) noexcept {
+			return natl::unexpected(unexpectedTokenHandler(expectedTokenType, errorLocation, deserializeErrorFlag));
 		}
 
 		constexpr natl::Unexpected<DeserializeErrorHandler> unexpectedEndOfSource(const natl::DeserializeErrorLocation errorLocation) noexcept {
@@ -122,8 +122,8 @@ namespace nadsad::ascii {
 
 		constexpr natl::Option<DeserializeErrorHandler> unexpectedTokenOption(const TokenType& expectedTokenType,
 			const natl::DeserializeErrorLocation errorLocation,
-			const natl::DeserializeErrorFlag errorFlag) noexcept {
-			return unexpectedTokenHandler(expectedTokenType, errorLocation, errorFlag);
+			const natl::DeserializeErrorFlag deserializeErrorFlag) noexcept {
+			return unexpectedTokenHandler(expectedTokenType, errorLocation, deserializeErrorFlag);
 		}
 
 		constexpr natl::Option<DeserializeErrorHandler> unexpectedEndOfSourceOption(const natl::DeserializeErrorLocation errorLocation) noexcept {
@@ -212,7 +212,7 @@ namespace nadsad::ascii {
 		constexpr void dataStorageToDst(DataStroageDstType& dst, const natl::ConstAsciiStringView& dataStorage) noexcept {
 			dst.reserve(dataStorage.size());
 			for (natl::Size i = 0; i < dataStorage.size(); i++) {
-				if (dataStorage[i] == 255) {
+				if (dataStorage[i] == natl::Ascii(255)) {
 					if (!(i < dataStorage.size())) { break; }
 					i++;
 				}
@@ -223,6 +223,14 @@ namespace nadsad::ascii {
 		//test
 		template<typename SerializeType>
 		struct TestType;
+
+		template<typename Type>
+			requires(natl::IsDeserilizableC<Type>)
+		struct TestType<Type> : TestType<natl::DeserializeTypeOf<Type>> {};
+
+		template<typename Type>
+			requires(natl::IsSerializableC<Type> && !natl::IsDeserilizableC<Type>)
+		struct TestType<Type> : TestType<natl::SerializeTypeOf<Type>> {};
 
 		template<> struct TestType<natl::SerializeI8> {
 			constexpr static natl::Option<DeserializeErrorHandler> test(Deserializer& deserializer,
@@ -420,10 +428,10 @@ namespace nadsad::ascii {
 				if (!deserializer.nextToken()) {
 					return deserializer.unexpectedEndOfSourceOption(errorLocation);
 				}
-				if (!deserializer.isTokenInteger(getCurrentToken().type)) {
+				if (!deserializer.isTokenInteger(deserializer.getCurrentToken().type)) {
 					error_message_string_type errorMessage = "expected integer but got ";
-					errorMessage += tokenTypeToDebugString(getCurrentToken().type);
-					return DeserializeErrorHandler(errorMessage, getErrorLocationDetails(),
+					errorMessage += tokenTypeToDebugString(deserializer.getCurrentToken().type);
+					return DeserializeErrorHandler(errorMessage, deserializer.getErrorLocationDetails(),
 						errorLocation, natl::DeserializeErrorFlag::wrongType);
 				}
 
@@ -660,8 +668,9 @@ namespace nadsad::ascii {
 			return {};
 		}		
 
-		template<typename SerializeType, typename ParentType>
-		[[nodiscard]] constexpr natl::Expect<DeserializeInfo<SerializeType>, DeserializeErrorHandler> beginReadNamed(
+		template<typename Type, typename ParentType>
+			//TODO requires()
+		[[nodiscard]] constexpr natl::Expect<DeserializeInfo<natl::SerializeTypeOf<Type>>, DeserializeErrorHandler> beginReadNamed(
 			DeserializeInfo<ParentType>& parrent, const natl::ConstAsciiStringView name) noexcept {
 			constexpr natl::DeserializeErrorLocation errorLocation = natl::DeserializeErrorLocation::beginReadNamed;
 			
@@ -685,7 +694,7 @@ namespace nadsad::ascii {
 			if(!nextToken()) {
 				return unexpectedEndOfSource(errorLocation);
 			}
-			natl::Option<DeserializeErrorHandler> typeError = TestType<SerializeType>::test(self(), errorLocation);
+			natl::Option<DeserializeErrorHandler> typeError = TestType<Type>::test(self(), errorLocation);
 			if(typeError.hasValue()) {
 				return natl::unexpected(typeError.value());
 			}
@@ -697,10 +706,11 @@ namespace nadsad::ascii {
 				return unexpectedToken(TokenType::colon, errorLocation, natl::DeserializeErrorFlag::wrongFormatting);
 			}
 
-			return DeserializeInfo<SerializeType>{};
+			return DeserializeInfo<natl::SerializeTypeOf<Type>>{};
 		}
 
 		template<typename SerializeType>
+			//TODO requires(IsSerializeTypeC<SerializeType>)
 		[[nodiscard]] constexpr natl::Option<DeserializeErrorHandler> endReadNamed(DeserializeInfo<SerializeType>& info) noexcept {
 			constexpr natl::DeserializeErrorLocation errorLocation = natl::DeserializeErrorLocation::endReadNamed;
 			if (!nextToken()) {
@@ -741,11 +751,11 @@ namespace nadsad::ascii {
 					return natl::unexpected(DeserializeErrorHandler(errorMessage, getErrorLocationDetails(), 
 						errorLocation, natl::DeserializeErrorFlag::wrongType));
 				}
-				intString.remove_suffix(2);
+				intString.removeSuffix(2);
 			}
 
 			if (intString[0] == '#') {
-				intString.remove_prefix(5);
+				intString.removePrefix(5);
 			}
 
 			natl::Expect<IntegerType, natl::StringNumericConvertError> value;
@@ -803,18 +813,18 @@ namespace nadsad::ascii {
 					return natl::unexpected(DeserializeErrorHandler(errorMessage, getErrorLocationDetails(), 
 						errorLocation, natl::DeserializeErrorFlag::wrongType));
 				}
-				floatString.remove_suffix(2);
+				floatString.removeSuffix(2);
 			}
 
 			if (floatString[0] == '#') {
-				floatString.remove_prefix(5);
+				floatString.removePrefix(5);
 			}
 
 			natl::Expect<FloatType, natl::StringNumericConvertError> value;
 			switch (getCurrentToken().type) {
 			case TokenType::decimalFloat:
 			case TokenType::decimalFloatWithType:
-				value = natl::stringDecimalToFloat(floatString);
+				value = natl::stringDecimalToFloat<FloatType>(floatString);
 			case TokenType::hexadecimalFloatWithType:
 			case TokenType::hexadecimalFloat:
 			case TokenType::binaryFloat:
@@ -891,8 +901,8 @@ namespace nadsad::ascii {
 			if (!nextToken()) {
 				return unexpectedEndOfSource(errorLocation);
 			}
-			if (!isCurrentToken(TokenType::charLiteral)) {
-				return unexpectedToken(TokenType::charLiteral, errorLocation, natl::DeserializeErrorFlag::wrongType);
+			if (!isCurrentToken(TokenType::length1CharLiteral) || !isCurrentToken(TokenType::length2CharLiteral)) {
+				return unexpectedToken(TokenType::length1CharLiteral, errorLocation, natl::DeserializeErrorFlag::wrongType);
 			}
 
 			const natl::ConstAsciiStringView charLiteral = currentTokenString();
@@ -998,27 +1008,27 @@ namespace nadsad::ascii {
 		}
 
 		private:
-		template<typename IntegerSerilizeType>
-		constexpr natl::Expect<natl::BasicSerializeTypeToType<IntegerSerilizeType>, DeserializeErrorHandler>
+		template<typename IntegerType>
+		constexpr natl::Expect<IntegerType, DeserializeErrorHandler>
 			readIntegerOfType(const natl::DeserializeErrorLocation errorLocation) noexcept {
-			using integer_type = natl::BasicSerializeTypeToType<IntegerSerilizeType>;
-			natl::Expect<natl::BasicSerializeTypeToType<IntegerSerilizeType>, DeserializeErrorHandler> value;
-			if constexpr (natl::IsSame<IntegerSerilizeType, natl::SerializeI8>) {
-				value = readInteger<integer_type, NumericIntType::i8, false>(errorLocation);
-			} else if constexpr (natl::IsSame<IntegerSerilizeType, natl::SerializeI16>) {
-				value = readInteger<integer_type, NumericIntType::i16, false>(errorLocation);
-			} else if constexpr (natl::IsSame<IntegerSerilizeType, natl::SerializeI32>) {
-				value = readInteger<integer_type, NumericIntType::i32, false>(errorLocation);
-			} else if constexpr (natl::IsSame<IntegerSerilizeType, natl::SerializeI64>) {
-				value = readInteger<integer_type, NumericIntType::i64, false>(errorLocation);
-			} else if constexpr (natl::IsSame<IntegerSerilizeType, natl::SerializeUI8>) {
-				value = readInteger<integer_type, NumericIntType::ui8, false>(errorLocation);
-			} else if constexpr (natl::IsSame<IntegerSerilizeType, natl::SerializeUI16>) {
-				value = readInteger<integer_type, NumericIntType::ui16, false>(errorLocation);
-			} else if constexpr (natl::IsSame<IntegerSerilizeType, natl::SerializeUI32>) {
-				value = readInteger<integer_type, NumericIntType::ui32, false>(errorLocation);
-			} else if constexpr (natl::IsSame<IntegerSerilizeType, natl::SerializeUI64>) {
-				value = readInteger<integer_type, NumericIntType::ui64, false>(errorLocation);
+			natl::Expect<IntegerType, DeserializeErrorHandler> value;
+			using integer_deserialize_type = natl::DeserializeTypeOf<IntegerType>;
+			if constexpr (natl::IsSame<integer_deserialize_type, natl::SerializeI8>) {
+				value = readInteger<IntegerType, NumericIntType::i8, false>(errorLocation);
+			} else if constexpr (natl::IsSame<integer_deserialize_type, natl::SerializeI16>) {
+				value = readInteger<IntegerType, NumericIntType::i16, false>(errorLocation);
+			} else if constexpr (natl::IsSame<integer_deserialize_type, natl::SerializeI32>) {
+				value = readInteger<IntegerType, NumericIntType::i32, false>(errorLocation);
+			} else if constexpr (natl::IsSame<integer_deserialize_type, natl::SerializeI64>) {
+				value = readInteger<IntegerType, NumericIntType::i64, false>(errorLocation);
+			} else if constexpr (natl::IsSame<integer_deserialize_type, natl::SerializeUI8>) {
+				value = readInteger<IntegerType, NumericIntType::ui8, false>(errorLocation);
+			} else if constexpr (natl::IsSame<integer_deserialize_type, natl::SerializeUI16>) {
+				value = readInteger<IntegerType, NumericIntType::ui16, false>(errorLocation);
+			} else if constexpr (natl::IsSame<integer_deserialize_type, natl::SerializeUI32>) {
+				value = readInteger<IntegerType, NumericIntType::ui32, false>(errorLocation);
+			} else if constexpr (natl::IsSame<integer_deserialize_type, natl::SerializeUI64>) {
+				value = readInteger<IntegerType, NumericIntType::ui64, false>(errorLocation);
 			} else {
 				natl::unreachable();
 			}
@@ -1026,12 +1036,11 @@ namespace nadsad::ascii {
 		}
 
 		public:
-		template<typename BaseSerilizeType, typename Functor>
-			requires(natl::IsEnumBaseSerializeTypeC<BaseSerilizeType> 
-				&& natl::IsStringToSerializeFlagConvertFunctor<Functor, natl::BasicSerializeTypeToType<BaseSerilizeType>>)
-		[[nodiscard]] constexpr natl::Expect<natl::BasicSerializeTypeToType<BaseSerilizeType>, DeserializeErrorHandler>
-			readEnum(DeserializeInfo<natl::SerializeEnum<BaseSerilizeType>>& info, Functor&& stringToEnum) noexcept {
-			using enum_integer_type = natl::BasicSerializeTypeToType<BaseSerilizeType>;
+		template<typename BaseType, typename Functor>
+			requires(natl::IsSerializableC<BaseType>
+				&& natl::IsStringToSerializeFlagConvertFunctor<Functor, BaseType>)
+		[[nodiscard]] constexpr natl::Expect<natl::BasicSerializeTypeToType<natl::SerializeTypeOf<BaseType>>, DeserializeErrorHandler>
+			readEnum(DeserializeInfo<natl::SerializeEnum<BaseType>>& info, Functor&& stringToEnum) noexcept {
 			constexpr natl::DeserializeErrorLocation errorLocation = natl::DeserializeErrorLocation::readEnum;
 
 			if (!nextToken()) {
@@ -1043,7 +1052,7 @@ namespace nadsad::ascii {
 				error_message_string_type enumValueString;
 				stringLiteralToDst<error_message_string_type>(enumValueString, enumValueStringLiteral);
 
-				natl::Option<enum_integer_type> value = stringToEnum(enumValueString.toStringView());
+				natl::Option<BaseType> value = stringToEnum(enumValueString.toStringView());
 				
 				if (value.hasValue()) {
 					return value.value();
@@ -1054,7 +1063,7 @@ namespace nadsad::ascii {
 						errorLocation, natl::DeserializeErrorFlag::valueParsing));
 				}
 			} else if(isTokenInteger(getCurrentToken().type)) {
-				return readIntegerOfType<BaseSerilizeType>(errorLocation);
+				return readIntegerOfType<BaseType>(errorLocation);
 			} else {
 				error_message_string_type errorMessage = "expected string literal or integer but got ";
 				errorMessage += tokenTypeToDebugString(getCurrentToken().type);
@@ -1131,12 +1140,13 @@ namespace nadsad::ascii {
 			return endReadEmptyContainer(natl::DeserializeErrorLocation::endReadEmptyArray, TokenType::rightSquare);
 		}
 
-		template<typename SerializeElementType>
-		[[nodiscard]] constexpr natl::Expect<DeserializeInfo<SerializeElementType>, DeserializeErrorHandler> beginReadArrayElement(
-			DeserializeInfo<natl::SerializeArray<SerializeElementType>>& info) noexcept {
-			return DeserializeInfo<SerializeElementType>{};
+		template<typename ElementType>
+		[[nodiscard]] constexpr natl::Expect<DeserializeInfo<natl::SerializeTypeOf<ElementType>>, DeserializeErrorHandler> beginReadArrayElement(
+			DeserializeInfo<natl::SerializeArray<ElementType>>& info) noexcept {
+			return DeserializeInfo<natl::SerializeTypeOf<ElementType>>{};
 		}
 		template<typename SerializeElementType>
+			requires(natl::IsSerializeTypeC<SerializeElementType>)
 		[[nodiscard]] constexpr natl::Option<DeserializeErrorHandler> endReadArrayElement(DeserializeInfo<SerializeElementType>& info) {
 			return endReadContainerElement(natl::DeserializeErrorLocation::endReadArrayElement);
 		};
@@ -1219,11 +1229,11 @@ namespace nadsad::ascii {
 			return isCurrentToken(TokenType::keywordNull);
 		}
 
-		template<typename StringToVariatIndexFunctor, typename IndexSerializeType, typename... VariantSerializeTypes>
-			requires(natl::IsStringToSerializeVariantIndexConvertFunctor<StringToVariatIndexFunctor, natl::BasicSerializeTypeToType<IndexSerializeType>>)
-		[[nodiscard]] constexpr natl::Expect<natl::BasicSerializeTypeToType<IndexSerializeType>, DeserializeErrorHandler>
+		template<typename StringToVariatIndexFunctor, typename IndexType, typename... VariantTypes>
+			requires(natl::IsStringToSerializeVariantIndexConvertFunctor<StringToVariatIndexFunctor, IndexType>)
+		[[nodiscard]] constexpr natl::Expect<IndexType, DeserializeErrorHandler>
 			beginReadVaraintGetIndex(
-				DeserializeInfo<natl::SerializeVariant<IndexSerializeType, VariantSerializeTypes...>>& info,
+				DeserializeInfo<natl::SerializeVariant<IndexType, VariantTypes...>>& info,
 				const natl::Bool isEmpty,
 				StringToVariatIndexFunctor&& stringToIndex) {
 			
@@ -1242,7 +1252,7 @@ namespace nadsad::ascii {
 			if (!nextToken()) {
 				return unexpectedEndOfSource(errorLocation);
 			}
-			natl::Option<DeserializeErrorHandler> indexTypeTest = TestType<IndexSerializeType>::test(self(), errorLocation);
+			natl::Option<DeserializeErrorHandler> indexTypeTest = TestType<IndexType>::test(self(), errorLocation);
 			if (indexTypeTest.hasValue()) {
 				return natl::unexpected(indexTypeTest.value());
 			}
@@ -1257,7 +1267,7 @@ namespace nadsad::ascii {
 				error_message_string_type indexValueString;
 				stringLiteralToDst<error_message_string_type>(indexValueString, indexValueStringLiteral);
 
-				natl::Option<natl::BasicSerializeTypeToType<IndexSerializeType>> value = stringToIndex(indexValueString.toStringView());
+				natl::Option<IndexType> value = stringToIndex(indexValueString.toStringView());
 
 				if (value.hasValue()) {
 					index = value.value();
@@ -1268,13 +1278,13 @@ namespace nadsad::ascii {
 						errorLocation, natl::DeserializeErrorFlag::valueParsing));
 				}
 			} else if (isTokenInteger(getCurrentToken().type)) {
-				auto indexValueExpect = readIntegerOfType<IndexSerializeType>(errorLocation);
+				auto indexValueExpect = readIntegerOfType<IndexType>(errorLocation);
 				
 				if(indexValueExpect.hasValue()) {
 					index = indexValueExpect.value();
 				} else {
 					error_message_string_type integerErrorMessage = "";
-					indexValueExpect.error().getErrorMessage<error_message_string_type>(integerErrorMessage);
+					indexValueExpect.error().template getErrorMessage<error_message_string_type>(integerErrorMessage);
 
 					error_message_string_type errorMessage = "failed to parse variant index";
 					if(integerErrorMessage.isNotEmpty()) {
@@ -1302,16 +1312,16 @@ namespace nadsad::ascii {
 			return index;
 		}
 
-		template<typename SerializeType, typename IndexSize, typename... VariantSerializeTypes>
-			requires(natl::TemplatePackHasElementC<natl::IsSameV, SerializeType, VariantSerializeTypes...>)
-		[[nodiscard]] constexpr natl::Expect<DeserializeInfo<SerializeType>, DeserializeErrorHandler>
-			beginReadVaraintOfType(DeserializeInfo<natl::SerializeVariant<IndexSize, VariantSerializeTypes...>>& variant) {
+		template<typename ElementType, typename IndexSize, typename... VariantTypes>
+			requires(natl::TemplatePackHasElementC<natl::IsSameV, ElementType, VariantTypes...>)
+		[[nodiscard]] constexpr natl::Expect<DeserializeInfo<natl::SerializeTypeOf<ElementType>>, DeserializeErrorHandler>
+			beginReadVaraintOfType(DeserializeInfo<natl::SerializeVariant<IndexSize, VariantTypes...>>& variant) {
 			constexpr natl::DeserializeErrorLocation errorLocation = natl::DeserializeErrorLocation::beginReadVariantOfType;
 			
 			if (!nextToken()) {
 				return unexpectedEndOfSource(errorLocation);
 			}
-			natl::Option<DeserializeErrorHandler> typeTest = TestType<SerializeType>::test(self(), errorLocation);
+			natl::Option<DeserializeErrorHandler> typeTest = TestType<ElementType>::test(self(), errorLocation);
 			if (typeTest.hasValue()) {
 				return natl::unexpected(typeTest.value());
 			}
@@ -1330,12 +1340,12 @@ namespace nadsad::ascii {
 				return unexpectedToken(TokenType::leftCurly, errorLocation, natl::DeserializeErrorFlag::wrongFormatting);
 			}
 
-			return DeserializeInfo<SerializeType>{};
+			return DeserializeInfo<natl::SerializeTypeOf<ElementType>>{};
 		}
 
-		template<typename SerializeType>
+		template<typename ElementSerializeType>
 		[[nodiscard]] constexpr natl::Option<DeserializeErrorHandler>
-			endReadVariant(DeserializeInfo<SerializeType>& info) {
+			endReadVariant(DeserializeInfo<ElementSerializeType>& info) {
 			constexpr natl::DeserializeErrorLocation errorLocation = natl::DeserializeErrorLocation::endReadVariant;
 			if (!nextToken()) {
 				return unexpectedEndOfSourceOption(errorLocation);

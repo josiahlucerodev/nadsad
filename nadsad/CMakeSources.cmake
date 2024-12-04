@@ -2,6 +2,7 @@ set(HEADER_FILES
 nadsad/asciiFormat/deserializer.h
 nadsad/asciiFormat/lexer.h
 nadsad/asciiFormat/serializer.h
+nadsad/binaryFormat/serializer.h
 nadsad/nadsad.h
 )
 

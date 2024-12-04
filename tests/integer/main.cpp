@@ -12,7 +12,6 @@ int main() noexcept {
 
 	nadsad::ascii::LexicalInfo lexicalInfo;
 	{
-		natl::TestTimer test("lexical analysis");
 		const natl::ConstAsciiStringView source = simpleTestFile.value().toStringView();
 		lexicalInfo = nadsad::ascii::lexicalAnalysis(source);
 	}
@@ -47,8 +46,6 @@ int main() noexcept {
 	} else {
 		nadsad::ascii::Serializer<1000, natl::SerializeFlag::pretty> errorSerializer{};
 		deserializer.serializeSourceProccessState(errorSerializer);
-
-
 		natl::println(errorSerializer.output());
 	}
 }

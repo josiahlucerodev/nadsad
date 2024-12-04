@@ -9,6 +9,10 @@ namespace nadsad::ascii {
 		template<typename SerializeType>
 		struct SerializeTypeToString;
 
+		template<typename Type>
+			requires(natl::IsSerializableC<Type>)
+		struct SerializeTypeToString<Type> : SerializeTypeToString<natl::SerializeTypeOf<Type>> {};
+
 		template<> struct SerializeTypeToString<natl::SerializeI8> {
 			template<typename OutputDstType>
 			constexpr static void write(OutputDstType& output) noexcept {
@@ -187,7 +191,7 @@ namespace nadsad::ascii {
 	}
 
 	template<typename SerializeType, typename OutputDstType>
-		requires(natl::IsSerializeTypeC<SerializeType>)
+		requires(natl::IsSerializeTypeC<SerializeType> || natl::IsSerializableC<SerializeType>)
 	constexpr void serializeTypeToString(OutputDstType& output) noexcept {
 		impl::SerializeTypeToString<SerializeType>::write(output);
 	}
@@ -269,6 +273,7 @@ namespace nadsad::ascii {
 			writeStr(name);
 			storage += ',';
 			newLine();
+			return 0;
 		}
 
 		template<typename IndexIDSizeType>
@@ -507,7 +512,7 @@ namespace nadsad::ascii {
 			requires(natl::IsSerializeVariantC<VariantSerializeType>)
 		constexpr void beginWriteVariant(const natl::ConstAsciiStringView& strValue) noexcept {
 			storage += "variant{";
-			serializeTypeToString<typename VariantSerializeType::index_size>(storage);
+			serializeTypeToString<typename VariantSerializeType::index_type>(storage);
 			storage += " ";
 			writeStr(strValue);
 			storage += ",";
