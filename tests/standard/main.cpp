@@ -5,7 +5,6 @@
 #include <nadsad/nadsad.h>
 
 
-
 int main() noexcept {
 	natl::Path testFilePath = nadsad::getTestResourcePath();
 	testFilePath /= "standard/integer.nadsad";
@@ -21,7 +20,6 @@ int main() noexcept {
 
 	nadsad::ascii::LexicalInfo lexicalInfo;
 	{
-		natl::TestTimer test("lexical analysis");
 		const natl::ConstAsciiStringView source = fileContents.toStringView();
 		lexicalInfo = nadsad::ascii::lexicalAnalysis(source);
 	}
