@@ -815,8 +815,7 @@ namespace nadsad::ascii {
 				return lexicalInfo.tokenUnits.size() - sizeof(natl::ui64) - 1;
 			}
 
-			addToken(TokenType::unknown, offset);
-			const natl::ui64 unknownTokenIndex = currentTokenIndex();
+			const natl::ui64 unknownTokenIndex = addToken(TokenType::unknown, offset);
 			add64BitInteger(size);
 
 			if(createError) {
@@ -1874,6 +1873,7 @@ namespace nadsad::ascii {
 		requires(natl::IsConvertDynStringContainer<DynStringContainer>)
 	constexpr natl::Bool lexicalErrorToMessage(DynStringContainer& outputDst, const LexicalError& lexicalError, const LexicalInfo& lexicalInfo) noexcept {
 		outputDst.reserve(outputDst.size() + 100);
+		constexpr natl::Size maxValueLength = 100;
 		switch (lexicalError.type) {
 		break; case LexicalErrorType::unknownToken: {
 			const natl::ui64 tokenIndex = lexicalError.errorVariant.unknownToken.tokenIndex;
@@ -1884,7 +1884,7 @@ namespace nadsad::ascii {
 
 			natl::formatToBack(outputDst, "unknown token at ");
 			formatTokenAtToBack<DynStringContainer>(outputDst, tokenIndex, lexicalInfo);
-			natl::formatToBack(outputDst, " with value of ", getViewOfTokenSource(token, tokenIndex, lexicalInfo));
+			natl::formatToBack(outputDst, " with value of ", getViewOfTokenSource(token, tokenIndex, lexicalInfo).substr(0, maxValueLength));
 			return true;
 		}
 		break; case LexicalErrorType::unknownIdentifer: {
@@ -1896,7 +1896,7 @@ namespace nadsad::ascii {
 
 			natl::formatToBack(outputDst, "unknown identifer at ");
 			formatTokenAtToBack<DynStringContainer>(outputDst, tokenIndex, lexicalInfo);
-			natl::formatToBack(outputDst, " with value of ", getViewOfTokenSource(token, tokenIndex, lexicalInfo));
+			natl::formatToBack(outputDst, " with value of ", getViewOfTokenSource(token, tokenIndex, lexicalInfo).substr(0, maxValueLength));
 			return true;
 		}
 		break; case LexicalErrorType::unknownLiteralExtention: {
@@ -1910,7 +1910,7 @@ namespace nadsad::ascii {
 				literalPreExtTypeToErrorString(lexicalError.errorVariant.unknownLiteralExtention.literalType),
 				" with unknown literal extention at");
 
-			const natl::ConstAsciiStringView tokenSource = getViewOfTokenSource(token, tokenIndex, lexicalInfo);
+			const natl::ConstAsciiStringView tokenSource = getViewOfTokenSource(token, tokenIndex, lexicalInfo).substr(0, maxValueLength);
 			formatTokenAtToBack<DynStringContainer>(outputDst, tokenIndex, lexicalInfo);
 			natl::formatToBack(outputDst, " with value of ", tokenSource,
 				"with extenstion of ", tokenSource.substr(lexicalError.errorVariant.unknownLiteralExtention.extentionOffset));
@@ -1922,7 +1922,7 @@ namespace nadsad::ascii {
 				return false;
 			}
 			const Token token = getTokenAt(tokenIndex, lexicalInfo.tokenUnits);
-			const natl::ConstAsciiStringView tokenSource = getViewOfTokenSource(token, tokenIndex, lexicalInfo);
+			const natl::ConstAsciiStringView tokenSource = getViewOfTokenSource(token, tokenIndex, lexicalInfo).substr(0, maxValueLength);
 
 			natl::formatToBack(outputDst, "unknown literal pre extention at ");
 			formatTokenAtToBack<DynStringContainer>(outputDst, tokenIndex, lexicalInfo);
@@ -1939,7 +1939,7 @@ namespace nadsad::ascii {
 
 			natl::formatToBack(outputDst, "expected hash at the literal pre end at ");
 			formatTokenAtToBack<DynStringContainer>(outputDst, tokenIndex, lexicalInfo);
-			natl::formatToBack(outputDst, " with value of ", getViewOfTokenSource(token, tokenIndex, lexicalInfo));
+			natl::formatToBack(outputDst, " with value of ", getViewOfTokenSource(token, tokenIndex, lexicalInfo).substr(0, maxValueLength));
 			return true;
 		}
 		break; case LexicalErrorType::expectedDigitsAfterLiteralExt: {
@@ -1951,7 +1951,7 @@ namespace nadsad::ascii {
 
 			natl::formatToBack(outputDst, "expected digits after literal ext at ");
 			formatTokenAtToBack<DynStringContainer>(outputDst, tokenIndex, lexicalInfo);
-			natl::formatToBack(outputDst, " with value of ", getViewOfTokenSource(token, tokenIndex, lexicalInfo));
+			natl::formatToBack(outputDst, " with value of ", getViewOfTokenSource(token, tokenIndex, lexicalInfo).substr(0, maxValueLength));
 			return true;
 		}
 		break; case LexicalErrorType::expectedDigitsAfterFloatDot: {
@@ -1964,7 +1964,7 @@ namespace nadsad::ascii {
 			natl::formatToBack(outputDst, "expected digits after float dot from literal of type ",
 				literalPreExtTypeToErrorString(lexicalError.errorVariant.expectedDigitsAfterFloatDot.literalType), " at ");
 			formatTokenAtToBack<DynStringContainer>(outputDst, tokenIndex, lexicalInfo);
-			natl::formatToBack(outputDst, " with value of ", getViewOfTokenSource(token, tokenIndex, lexicalInfo));
+			natl::formatToBack(outputDst, " with value of ", getViewOfTokenSource(token, tokenIndex, lexicalInfo).substr(0, maxValueLength));
 			return true;
 		}
 		break; case LexicalErrorType::expectedDigitsAfterFloatExp: {
@@ -1977,7 +1977,7 @@ namespace nadsad::ascii {
 			natl::formatToBack(outputDst, "expected digits after float exp from literal of type ",
 				literalPreExtTypeToErrorString(lexicalError.errorVariant.expectedDigitsAfterFloatExp.literalType), " at ");
 			formatTokenAtToBack<DynStringContainer>(outputDst, tokenIndex, lexicalInfo);
-			natl::formatToBack(outputDst, " with value of ", getViewOfTokenSource(token, tokenIndex, lexicalInfo));
+			natl::formatToBack(outputDst, " with value of ", getViewOfTokenSource(token, tokenIndex, lexicalInfo).substr(0, maxValueLength));
 			return true;
 		}
 		break; case LexicalErrorType::expectedIdentiferAfterLiteralPostExtStart: {
@@ -1990,7 +1990,7 @@ namespace nadsad::ascii {
 			natl::formatToBack(outputDst, "expected identifer after literal post ext start from literal of type ",
 				literalPreExtTypeToErrorString(lexicalError.errorVariant.expectedIdentiferAfterLiteralPostExtStart.literalType), " at ");
 			formatTokenAtToBack<DynStringContainer>(outputDst, tokenIndex, lexicalInfo);
-			natl::formatToBack(outputDst, " with value of ", getViewOfTokenSource(token, tokenIndex, lexicalInfo));
+			natl::formatToBack(outputDst, " with value of ", getViewOfTokenSource(token, tokenIndex, lexicalInfo).substr(0, maxValueLength));
 			return true;
 		}
 		break; case LexicalErrorType::unknownLiteralPostExt: {
@@ -2001,11 +2001,11 @@ namespace nadsad::ascii {
 			const Token token = getTokenAt(tokenIndex, lexicalInfo.tokenUnits);
 
 			natl::formatToBack(outputDst, "unknown literal post ext \"",
-				getViewOfTokenSource(token, tokenIndex, lexicalInfo).substr(lexicalError.errorVariant.unknownLiteralPostExt.literalPostExtStartOffset),
+				getViewOfTokenSource(token, tokenIndex, lexicalInfo).substr(0, maxValueLength).substr(lexicalError.errorVariant.unknownLiteralPostExt.literalPostExtStartOffset),
 				"\" from literal of type ",
 				literalPreExtTypeToErrorString(lexicalError.errorVariant.unknownLiteralPostExt.literalType), " at ");
 			formatTokenAtToBack<DynStringContainer>(outputDst, tokenIndex, lexicalInfo);
-			natl::formatToBack(outputDst, " with value of ", getViewOfTokenSource(token, tokenIndex, lexicalInfo));
+			natl::formatToBack(outputDst, " with value of ", getViewOfTokenSource(token, tokenIndex, lexicalInfo).substr(0, maxValueLength));
 			return true;
 		}
 		break; case LexicalErrorType::numericTooBig: {
@@ -2016,7 +2016,7 @@ namespace nadsad::ascii {
 			const Token token = getTokenAt(tokenIndex, lexicalInfo.tokenUnits);
 			natl::formatToBack(outputDst, "numeric too big at ");
 			formatTokenAtToBack<DynStringContainer>(outputDst, tokenIndex, lexicalInfo);
-			natl::formatToBack(outputDst, " with value of ", getViewOfTokenSource(token, tokenIndex, lexicalInfo));
+			natl::formatToBack(outputDst, " with value of ", getViewOfTokenSource(token, tokenIndex, lexicalInfo).substr(0, maxValueLength));
 			return true;
 		}
 		break; case LexicalErrorType::nonMatchingBeginScope: {
@@ -2219,6 +2219,7 @@ template<> struct natl::Serialize<nadsad::ascii::TokenNumericUnit> {
 	using as_type = SerializeStruct<natl::ui8>;
 	using type = nadsad::ascii::TokenNumericUnit;
 	template<typename Serializer> using error_type = void;
+	constexpr static inline natl::ConstAsciiStringView name = "TokenNumericUnit";
 
 	template<typename Serializer>
 	constexpr static void write(Serializer& serializer, const type numericUnit) noexcept {
@@ -2233,8 +2234,9 @@ template<> struct natl::Serialize<nadsad::ascii::TokenNumericUnit> {
 template<> struct natl::Deserialize<nadsad::ascii::TokenNumericUnit> {
 	using as_type = natl::SerializeTypeOf<nadsad::ascii::TokenNumericUnit>;
 	using type = nadsad::ascii::TokenNumericUnit;
-	constexpr static ConstAsciiStringView sourceName = "natl::Deserialize<nadsad::ascii::TokenNumericUnit>::read";
 	template<typename Deserializer> using error_type = StandardDeserializeError<Deserializer>;
+	constexpr static inline natl::ConstAsciiStringView name = natl::RegularSerializeName<type>;
+	constexpr static ConstAsciiStringView sourceName = "natl::Deserialize<nadsad::ascii::TokenNumericUnit>::read";
 
 	template<typename Deserializer>
 	constexpr static natl::Option<error_type<Deserializer>>
@@ -2257,6 +2259,7 @@ template<> struct natl::Serialize<nadsad::ascii::TokenNumericWithIntTypeUnit> {
 	using as_type = SerializeStruct<natl::ui8, nadsad::ascii::NumericIntType>;
 	using type = nadsad::ascii::TokenNumericWithIntTypeUnit;
 	template<typename Serializer> using error_type = void;
+	constexpr static inline natl::ConstAsciiStringView name = "TokenNumericWithIntTypeUnit";
 
 	template<typename Serializer>
 	constexpr static void write(Serializer& serializer, const type intUnit) noexcept {
@@ -2272,8 +2275,9 @@ template<> struct natl::Serialize<nadsad::ascii::TokenNumericWithIntTypeUnit> {
 template<> struct natl::Deserialize<nadsad::ascii::TokenNumericWithIntTypeUnit> {
 	using as_type = natl::SerializeTypeOf<nadsad::ascii::TokenNumericWithIntTypeUnit>;
 	using type = nadsad::ascii::TokenNumericWithIntTypeUnit;
-	constexpr static ConstAsciiStringView sourceName = "natl::Deserialize<nadsad::ascii::TokenNumericWithIntTypeUnit>::read";
 	template<typename Deserializer> using error_type = StandardDeserializeError<Deserializer>;
+	constexpr static inline natl::ConstAsciiStringView name = natl::RegularSerializeName<type>;
+	constexpr static inline natl::ConstAsciiStringView sourceName = "natl::Deserialize<nadsad::ascii::TokenNumericWithIntTypeUnit>::read";
 
 	template<typename Deserializer>
 	constexpr static natl::Option<error_type<Deserializer>>
@@ -2302,8 +2306,8 @@ template<> struct natl::Deserialize<nadsad::ascii::TokenNumericWithIntTypeUnit> 
 				} else {
 					return valueExpect.error();
 				}
-				}
-				);
+			}
+		);
 	}
 };
 
@@ -2311,6 +2315,7 @@ template<> struct natl::Serialize<nadsad::ascii::TokenNumericWithFloatTypeUnit> 
 	using as_type = SerializeStruct<natl::ui8, nadsad::ascii::NumericFloatType>;
 	using type = nadsad::ascii::TokenNumericWithFloatTypeUnit;
 	template<typename Serializer> using error_type = void;
+	constexpr static inline natl::ConstAsciiStringView name = "TokenScopeUnit";
 
 	template<typename Serializer>
 	constexpr static void write(Serializer& serializer, const type floatUnit) noexcept {
@@ -2326,8 +2331,9 @@ template<> struct natl::Serialize<nadsad::ascii::TokenNumericWithFloatTypeUnit> 
 template<> struct natl::Deserialize<nadsad::ascii::TokenNumericWithFloatTypeUnit> {
 	using as_type = natl::SerializeTypeOf<nadsad::ascii::TokenNumericWithFloatTypeUnit>;
 	using type = nadsad::ascii::TokenNumericWithFloatTypeUnit;
-	constexpr static ConstAsciiStringView sourceName = "natl::Deserialize<nadsad::ascii::TokenNumericWithFloatTypeUnit>::read";
 	template<typename Deserializer> using error_type = StandardDeserializeError<Deserializer>;
+	constexpr static inline natl::ConstAsciiStringView name = natl::RegularSerializeName<type>;
+	constexpr static inline natl::ConstAsciiStringView sourceName = "natl::Deserialize<nadsad::ascii::TokenNumericWithFloatTypeUnit>::read";
 
 	template<typename Deserializer>
 	constexpr static natl::Option<error_type<Deserializer>>
@@ -2356,16 +2362,17 @@ template<> struct natl::Deserialize<nadsad::ascii::TokenNumericWithFloatTypeUnit
 				} else {
 					return valueExpect.error();
 				}
-				}
-				);
+			}
+		);
 	}
 };
 
 template<> struct natl::Serialize<nadsad::ascii::TokenStorageUnit> {
 	using as_type = SerializeStruct<natl::ui64, natl::ui64>;
 	using type = nadsad::ascii::TokenStorageUnit;
-	constexpr static ConstAsciiStringView sourceName = "natl::Deserialize<nadsad::ascii::TokenStorageUnit>::read";
 	template<typename Serializer> using error_type = void;
+	constexpr static inline natl::ConstAsciiStringView name = "TokenScopeUnit";
+	constexpr static inline natl::ConstAsciiStringView sourceName = "natl::Deserialize<nadsad::ascii::TokenStorageUnit>::read";
 
 	template<typename Serializer>
 	constexpr static void write(Serializer& serializer, const type storageUnit) noexcept {
@@ -2381,8 +2388,9 @@ template<> struct natl::Serialize<nadsad::ascii::TokenStorageUnit> {
 template<> struct natl::Deserialize<nadsad::ascii::TokenStorageUnit> {
 	using as_type = SerializeTypeOf<nadsad::ascii::TokenStorageUnit>;
 	using type = nadsad::ascii::TokenStorageUnit;
-	constexpr static ConstAsciiStringView sourceName = "natl::Deserialize<nadsad::ascii::TokenStorageUnit>::read";
 	template<typename Deserializer> using error_type = StandardDeserializeError<Deserializer>;
+	constexpr static inline natl::ConstAsciiStringView name = natl::RegularSerializeName<type>;
+	constexpr static ConstAsciiStringView sourceName = "natl::Deserialize<nadsad::ascii::TokenStorageUnit>::read";
 
 	template<typename Deserializer>
 	constexpr static natl::Option<error_type<Deserializer>>
@@ -2407,8 +2415,8 @@ template<> struct natl::Deserialize<nadsad::ascii::TokenStorageUnit> {
 template<> struct natl::Serialize<nadsad::ascii::TokenScopeUnit> {
 	using as_type = SerializeStruct<natl::ui64, natl::ui64>;
 	using type = nadsad::ascii::TokenScopeUnit;
-	constexpr static ConstAsciiStringView sourceName = "natl::Deserialize<nadsad::ascii::TokenScopeUnit>::read";
 	template<typename Serializer> using error_type = void;
+	constexpr static inline natl::ConstAsciiStringView name = "TokenScopeUnit";
 
 	template<typename Serializer>
 	constexpr static void write(Serializer& serializer, const type scopeUnit) noexcept {
@@ -2424,8 +2432,9 @@ template<> struct natl::Serialize<nadsad::ascii::TokenScopeUnit> {
 template<> struct natl::Deserialize<nadsad::ascii::TokenScopeUnit> {
 	using as_type = SerializeTypeOf<nadsad::ascii::TokenScopeUnit>;
 	using type = nadsad::ascii::TokenScopeUnit;
-	constexpr static ConstAsciiStringView sourceName = "natl::Deserialize<nadsad::ascii::TokenScopeUnit>::read";
 	template<typename Deserializer> using error_type = StandardDeserializeError<Deserializer>;
+	constexpr static inline natl::ConstAsciiStringView name = natl::RegularSerializeName<type>;
+	constexpr static inline natl::ConstAsciiStringView sourceName = "natl::Deserialize<nadsad::ascii::TokenScopeUnit>::read";
 
 	template<typename Deserializer>
 	constexpr static natl::Option<error_type<Deserializer>>
@@ -2457,6 +2466,7 @@ template<> struct natl::Serialize<nadsad::ascii::Token> {
 	>;
 	using type = nadsad::ascii::Token;
 	template<typename Serializer> using error_type = void;
+	constexpr static inline natl::ConstAsciiStringView name = "Token";
 
 	template<typename Serializer>
 	constexpr static void write(
@@ -2559,8 +2569,9 @@ template<> struct natl::Serialize<nadsad::ascii::Token> {
 template<> struct natl::Deserialize<nadsad::ascii::Token> {
 	using as_type = natl::SerializeTypeOf<nadsad::ascii::Token>;
 	using type = nadsad::ascii::Token;
-	constexpr static ConstAsciiStringView sourceName = "natl::Deserialize<nadsad::ascii::Token>::read";
 	template<typename Deserializer> using error_type = StandardDeserializeError<Deserializer>;
+	constexpr static inline natl::ConstAsciiStringView name = natl::RegularSerializeName<type>;
+	constexpr static inline natl::ConstAsciiStringView sourceName = "natl::Deserialize<nadsad::ascii::Token>::read";
 
 
 	template<typename Deserializer, typename TokenUnitsDstDynArrayType>
@@ -2668,6 +2679,7 @@ template<> struct natl::Serialize<nadsad::ascii::LexicalError> {
 	using as_type = natl::SerializeStruct<natl::String>;
 	using type = nadsad::ascii::LexicalError;
 	template<typename Serializer> using error_type = void;
+	constexpr static inline natl::ConstAsciiStringView name = "LexicalError";
 
 	template<typename Serializer>
 	constexpr static void write(Serializer& serializer, const nadsad::ascii::LexicalError& lexicalError, const nadsad::ascii::LexicalInfo& lexicalInfo) noexcept {
@@ -2687,8 +2699,9 @@ template<> struct natl::Serialize<nadsad::ascii::LexicalError> {
 template<> struct natl::Deserialize<nadsad::ascii::LexicalError> {
 	using as_type = natl::SerializeTypeOf<nadsad::ascii::LexicalError>;
 	using type = nadsad::ascii::LexicalError;
-	constexpr static ConstAsciiStringView sourceName = "natl::Deserialize<nadsad::ascii::LexicalError>::read";
 	template<typename Deserializer> using error_type = StandardDeserializeError<Deserializer>;
+	constexpr static inline natl::ConstAsciiStringView name = RegularSerializeName<type>;
+	constexpr static inline ConstAsciiStringView sourceName = "natl::Deserialize<nadsad::ascii::LexicalError>::read";
 
 	template<typename Deserializer>
 	constexpr static natl::Option<error_type<Deserializer>>
@@ -2743,8 +2756,8 @@ template<> struct natl::Serialize<nadsad::ascii::SerializeTokensFullInfo> {
 template<> struct natl::Deserialize<nadsad::ascii::SerializeTokensFullInfo> {
 	using as_type = natl::SerializeTypeOf<nadsad::ascii::SerializeTokensFullInfo>;
 	using type = nadsad::ascii::SerializeTokensFullInfo;
-	constexpr static ConstAsciiStringView sourceName = "natl::Deserialize<nadsad::ascii::SerializeTokensFullInfo>::read";
 	template<typename Deserializer> using error_type = StandardDeserializeError<Deserializer>;
+	constexpr static ConstAsciiStringView sourceName = "natl::Deserialize<nadsad::ascii::SerializeTokensFullInfo>::read";
 
 	template<typename Deserializer, typename TokenUnitsDstDynArrayType>
 	constexpr static natl::Option<error_type<Deserializer>>
@@ -2819,8 +2832,9 @@ template<> struct natl::Serialize<nadsad::ascii::LexicalInfo> {
 template<> struct natl::Deserialize<nadsad::ascii::LexicalInfo> {
 	using as_type = natl::SerializeTypeOf<nadsad::ascii::LexicalInfo>;
 	using type = nadsad::ascii::LexicalInfo;
-	constexpr static natl::ConstAsciiStringView sourceName = "natl::Deserialize<nadsad::ascii::LexicalInfo>::read";
 	template<typename Deserializer> using error_type = StandardDeserializeError<Deserializer>;
+	constexpr static inline natl::ConstAsciiStringView name = natl::RegularSerializeName<type>;
+	constexpr static inline natl::ConstAsciiStringView sourceName = "natl::Deserialize<nadsad::ascii::LexicalInfo>::read";
 
 	template<typename Deserializer, typename SourceDstType>
 	constexpr static natl::Option<error_type<Deserializer>> read(Deserializer& deserializer,
@@ -2841,7 +2855,7 @@ template<> struct natl::Deserialize<nadsad::ascii::LexicalInfo> {
 			}, [&](auto& deserializer, auto& structInfo) {
 				nadsad::ascii::SerializeTokensFullInfo dummy;
 				return natl::deserializeReadNamedToDstMatch<members::at<3>, Deserializer, nadsad::ascii::SerializeTokensFullInfo>(
-					deserializer, structInfo, "tokenUnits", dummy, dst.tokenUnits);
+					deserializer, structInfo, "tokens", dummy, dst.tokenUnits);
 			}
 		);
 	}

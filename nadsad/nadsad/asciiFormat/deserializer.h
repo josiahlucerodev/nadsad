@@ -173,7 +173,7 @@ namespace nadsad::ascii {
 		constexpr natl::Bool stringLiteralEqualsStr(
 			const natl::ConstAsciiStringView& stringLiteral, 
 			const natl::ConstAsciiStringView& testString) noexcept {
-			natl::Size stringLiteralIndex = 0;
+			natl::Size stringLiteralIndex = 1;
 			natl::Size testStringIndex = 0;
 			for(;stringLiteralIndex < stringLiteral.size() && testStringIndex < testString.size()
 				; stringLiteralIndex++, testStringIndex++) {
@@ -184,7 +184,7 @@ namespace nadsad::ascii {
 					return false;
 				}
 			}
-			return stringLiteralIndex == stringLiteral.size() - 1 && testStringIndex == testString.size() - 1;
+			return stringLiteralIndex == stringLiteral.size() - 1 && testStringIndex == testString.size();
 		}
 		
 		template<typename OutputDstType>
@@ -223,14 +223,6 @@ namespace nadsad::ascii {
 		//test
 		template<typename SerializeType>
 		struct TestType;
-
-		template<typename Type>
-			requires(natl::IsDeserilizableC<Type>)
-		struct TestType<Type> : TestType<natl::DeserializeTypeOf<Type>> {};
-
-		template<typename Type>
-			requires(natl::IsSerializableC<Type> && !natl::IsDeserilizableC<Type>)
-		struct TestType<Type> : TestType<natl::SerializeTypeOf<Type>> {};
 
 		template<> struct TestType<natl::SerializeI8> {
 			constexpr static natl::Option<DeserializeErrorHandler> test(Deserializer& deserializer,
@@ -647,6 +639,43 @@ namespace nadsad::ascii {
 				return {};
 			}
 		};
+
+		template<typename Type, template<typename> typename NameGetter>
+		struct TestTypeAsNameBase {
+			constexpr static natl::Option<DeserializeErrorHandler> test(Deserializer& deserializer,
+				const natl::DeserializeErrorLocation errorLocation) noexcept {
+				if (deserializer.isCurrentToken(TokenType::stringLiteral)) {
+					if (deserializer.stringLiteralEqualsStr(deserializer.currentTokenString(), NameGetter<Type>::value)) {
+						return {};
+					} else {
+						error_message_string_type errorMessage = "expected type name ";
+						errorMessage += NameGetter<Type>::value;
+						errorMessage += " but actual name was ";
+						deserializer.formatStringLiteral<error_message_string_type>(deserializer.currentTokenString(), errorMessage);
+						return DeserializeErrorHandler(
+							errorMessage, deserializer.getErrorLocationDetails(),
+							errorLocation, natl::DeserializeErrorFlag::wrongType);
+					}
+				}
+
+				return  TestType<natl::DeserializeTypeOf<Type>>::test(deserializer, errorLocation);
+			}
+		};
+
+		template<typename Type>
+			requires(natl::IsDeserilizableC<Type>)
+		struct TestType<Type> : TestType<natl::DeserializeTypeOf<Type>> {};
+		template<typename Type>
+			requires(natl::IsSerializableC<Type> && !natl::IsDeserilizableC<Type>)
+		struct TestType<Type> : TestType<natl::SerializeTypeOf<Type>> {};
+
+		template<typename Type>
+			requires(natl::IsDeserilizableC<Type> && natl::HasDeserializeNameC<Type>)
+		struct TestType<Type> : TestTypeAsNameBase<Type, natl::DeserializeNameV> {};
+		template<typename Type>
+			requires(natl::IsSerializableC<Type> && !natl::IsDeserilizableC<Type> && natl::HasSerializeNameC<Type>)
+		struct TestType<Type> : TestTypeAsNameBase<Type, natl::SerializeNameV> {};
+
 	public:
 		template<typename DynStringType>
 		constexpr void getLocationDetail(DynStringType& dst) noexcept {
@@ -681,7 +710,7 @@ namespace nadsad::ascii {
 			if(!isCurrentToken(TokenType::stringLiteral)) {
 				return unexpectedToken(TokenType::stringLiteral, errorLocation, natl::DeserializeErrorFlag::wrongFormatting);
 			}
-			if(stringLiteralEqualsStr(currentTokenString(), name)) {
+			if(!stringLiteralEqualsStr(currentTokenString(), name)) {
 				error_message_string_type errorMessage = "expected name ";
 				errorMessage += name;
 				errorMessage += " but actual name was ";
@@ -1238,23 +1267,8 @@ namespace nadsad::ascii {
 				StringToVariatIndexFunctor&& stringToIndex) {
 			
 			constexpr natl::DeserializeErrorLocation errorLocation = natl::DeserializeErrorLocation::beginReadVariantGetIndex;
-			if (!isCurrentToken(TokenType::keywordVariant)) {
-				return unexpectedToken(TokenType::keywordVariant, errorLocation, natl::DeserializeErrorFlag::wrongFormatting);
-			}
-
-			if (!nextToken()) {
-				return unexpectedEndOfSource(errorLocation);
-			}
 			if (!isCurrentToken(TokenType::leftCurly)) {
 				return unexpectedToken(TokenType::leftCurly, errorLocation, natl::DeserializeErrorFlag::wrongFormatting);
-			}
-
-			if (!nextToken()) {
-				return unexpectedEndOfSource(errorLocation);
-			}
-			natl::Option<DeserializeErrorHandler> indexTypeTest = TestType<IndexType>::test(self(), errorLocation);
-			if (indexTypeTest.hasValue()) {
-				return natl::unexpected(indexTypeTest.value());
 			}
 
 			natl::Size index = 0;
