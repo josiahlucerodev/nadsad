@@ -39,23 +39,32 @@
 
 
 # Type Syntax
-- op {type_or_name}
-- enum {ui_keyword} 
-- variant {ui_keyword} { {type_or_name}, ... }
-- struct { {type_or_name}, ... }
-- farray [{ui_numeric_literal}, {type_or_name}]
-- array ["{type_or_name}"]
-- dic {{type_or_name}, {type_or_name}}
+- op (type_or_name)
+- enum (ui_keyword) 
+- variant {ui_keyword} { (type_or_name), ... }
+- struct { (type_or_name), ... }
+- farray [(ui_numeric_literal), (type_or_name)]
+- array ["(type_or_name)"]
+- dic {(type_or_name), (type_or_name)}
 
 
 # Value Syntax
 - op value: null or type_value
 - enum_value: string_literal or ui_numeric_literal
 - varaint_index_value: string_literal or ui_numeric_literal
-- variant_value: {{varaint_index_value}, "{type_name}"} { value }
-- array_value: [ {values}, ... ]
-- dic_value: [ { key : value}, ... ]
-- struct: { {members}; ... }
+- variant_value: {(varaint_index_value), "(type_name)"} { (value) }
+- array_value: [ (values), ... ]
+- dic_value: [ { (key) : (value)}, ... ]
+- struct: { (members); ... }
 
 # Syntax 
-"{element_name}" {type}: {value}; 
+"{element_name}" {type}: {value},
+
+# Jump Syntax
+jtable_element_id: string_literal or ui_numeric_literal
+
+"element_name" jtable (ui_keyword) { 
+    (jtable_element_id) ui_numeric_literal, ...
+},
+
+jindex,

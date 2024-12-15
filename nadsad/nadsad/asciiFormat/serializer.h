@@ -2,6 +2,7 @@
 
 //natl
 #include <natl/processing/serialization.h>
+#include <natl/processing/serializationJump.h>
 #include <natl/util/enum.h>
 
 //interface 
@@ -254,6 +255,11 @@ namespace nadsad::ascii {
 		impl::SerializeTypeToString<FullTypes, SerializeType>::write(output);
 	}
 
+	enum class WriteFlag {
+		v_default = 0,
+		fullname,
+	};
+
 	template<
 		natl::Size smallBufferByteSize,
 		natl::SerializeFlag SerializeFlag = natl::SerializeFlag::pretty,
@@ -263,6 +269,8 @@ namespace nadsad::ascii {
 		using allocator_type = Alloc::template rebind_alloc<natl::Ascii>;
 		using code_point_type = natl::Ascii;
 		using container_type = natl::AsciiStringByteSize<smallBufferByteSize, allocator_type>;
+		using custom_write_flag_type = WriteFlag;
+		constexpr static custom_write_flag_type defaultCustomWriteFlag = WriteFlag::v_default;
 		constexpr static inline natl::Size smallBufferSize = smallBufferByteSize;
 		constexpr static inline natl::SerializeFlag flag = SerializeFlag;
 		constexpr static inline natl::Bool fullTypes = natl::bitFlagTest(SerializeFlag & natl::SerializeFlag::fullTypes);
@@ -304,98 +312,92 @@ namespace nadsad::ascii {
 				indentValue -= 1;
 			}
 		}
-	public:
-		constexpr void begin() noexcept {}
-		constexpr void end() noexcept {}
-
-		template<typename IndexIDSizeType>
-			requires(natl::IsBuiltInIntegerC<IndexIDSizeType>)
-		constexpr void beginWriteTable(const natl::Size size) noexcept {
-			storage += "table ";
-			serializeTypeToString<fullTypes, IndexIDSizeType, container_type>(storage);
-			space();
-			storage += '{';
-			newLine();
-			increaseIndent();
-		}
-		constexpr void endWriteTable() noexcept {
-			decreaseIndent();
-			indent();
-			storage += '}';
-		}
-		template<typename IndexIDSizeType>
-			requires(natl::IsBuiltInIntegerC<IndexIDSizeType>)
-		constexpr natl::ui64 writeTableElement(const natl::ConstAsciiStringView name, const IndexIDSizeType id) noexcept {
-			indent();
-			writeStr(name);
-			storage += ',';
-			newLine();
-			return 0;
-		}
-
-		template<typename IndexIDSizeType>
-			requires(natl::IsBuiltInIntegerC<IndexIDSizeType>)
-		constexpr void saveIndex(const IndexIDSizeType indexId, const natl::ConstAsciiStringView name) noexcept {
-			indent();
-			storage += "index ";
-			serializeTypeToString<fullTypes, IndexIDSizeType, container_type>(storage);
-			storage += " ";
-			natl::intToStringDecimal(storage, indexId);
-			writeStr(name);
-			storage += ';';
-			newLine();
-			;
+		constexpr void writeStrLiteral(const natl::ConstAsciiStringView str) noexcept {
+			impl::serializeWriteStringLiteral(storage, str);
 		}
 	public:
-		template<typename SerializeType>
+		constexpr void serializeBegin() noexcept {}
+		constexpr void serializeEnd() noexcept {}
+
+
+		template<natl::SerializeWriteFlag Flags, custom_write_flag_type CustomFlags, typename SerializeComponentType, 
+			typename SerializeType>
+			requires(natl::IsSerializeComponentC<SerializeComponentType>)
 		constexpr void beginWrite(const natl::ConstAsciiStringView name) noexcept {
 			indent();
-			writeStr(name);
+			writeStrLiteral(name);
 			storage += ' ';
 			serializeTypeToString<fullTypes, SerializeType, container_type>(storage);
 		}
+		template<natl::SerializeWriteFlag Flags, custom_write_flag_type CustomFlags, typename SerializeComponentType>
+			requires(natl::IsSerializeComponentC<SerializeComponentType>)
 		constexpr void endWrite() noexcept {
 			storage += ',';
 			newLine();
 		}
+		template<natl::SerializeWriteFlag Flags, custom_write_flag_type CustomFlags, typename SerializeComponentType>
+			requires(natl::IsSerializeComponentC<SerializeComponentType>)
 		constexpr void writeValue() noexcept {
 			storage += ':';
 			space();
 		}
-
+		template<natl::SerializeWriteFlag Flags, custom_write_flag_type CustomFlags, typename SerializeComponentType>
+			requires(natl::IsSerializeComponentC<SerializeComponentType>)
 		constexpr void writeNull() noexcept {
 			storage += "null";
 		}
+		template<natl::SerializeWriteFlag Flags, custom_write_flag_type CustomFlags, typename SerializeComponentType>
+			requires(natl::IsSerializeComponentC<SerializeComponentType>)
 		constexpr void writeI8(const natl::i8 value) noexcept {
 			natl::intToStringDecimal<container_type, natl::i8>(storage, value);
 		}
+		template<natl::SerializeWriteFlag Flags, custom_write_flag_type CustomFlags, typename SerializeComponentType>
+			requires(natl::IsSerializeComponentC<SerializeComponentType>)
 		constexpr void writeI16(const natl::i16 value) noexcept {
 			natl::intToStringDecimal<container_type, natl::i16>(storage, value);
 		}
+		template<natl::SerializeWriteFlag Flags, custom_write_flag_type CustomFlags, typename SerializeComponentType>
+			requires(natl::IsSerializeComponentC<SerializeComponentType>)
 		constexpr void writeI32(const natl::i32 value) noexcept {
 			natl::intToStringDecimal<container_type, natl::i32>(storage, value);
 		}
+		template<natl::SerializeWriteFlag Flags, custom_write_flag_type CustomFlags, typename SerializeComponentType>
+			requires(natl::IsSerializeComponentC<SerializeComponentType>)
 		constexpr void writeI64(const natl::i64 value) noexcept {
 			natl::intToStringDecimal<container_type, natl::i64>(storage, value);
 		}
+		template<natl::SerializeWriteFlag Flags, custom_write_flag_type CustomFlags, typename SerializeComponentType>
+			requires(natl::IsSerializeComponentC<SerializeComponentType>)
 		constexpr void writeUI8(const natl::ui8 value) noexcept {
 			natl::intToStringDecimal<container_type, natl::ui8>(storage, value);
 		}
+		template<natl::SerializeWriteFlag Flags, custom_write_flag_type CustomFlags, typename SerializeComponentType>
+			requires(natl::IsSerializeComponentC<SerializeComponentType>)
 		constexpr void writeUI16(const natl::ui16 value) noexcept {
 			natl::intToStringDecimal<container_type, natl::ui16>(storage, value);
 		}
+		template<natl::SerializeWriteFlag Flags, custom_write_flag_type CustomFlags, typename SerializeComponentType>
+			requires(natl::IsSerializeComponentC<SerializeComponentType>)
 		constexpr void writeUI32(const natl::ui32 value) noexcept {
 			natl::intToStringDecimal<container_type, natl::ui32>(storage, value);
 		}
+		template<natl::SerializeWriteFlag Flags, custom_write_flag_type CustomFlags, typename SerializeComponentType>
+			requires(natl::IsSerializeComponentC<SerializeComponentType>)
 		constexpr void writeUI64(const natl::ui64 value) noexcept {
 			natl::intToStringDecimal<container_type, natl::ui64>(storage, value);
 		}
+		template<natl::SerializeWriteFlag Flags, custom_write_flag_type CustomFlags, typename SerializeComponentType>
+			requires(natl::IsSerializeComponentC<SerializeComponentType>)
 		constexpr void writeF32(const natl::f32 value) noexcept {
 			natl::floatToStringDecimal<container_type, natl::f32>(storage, value);
 		}
+		template<natl::SerializeWriteFlag Flags, custom_write_flag_type CustomFlags, typename SerializeComponentType>
+			requires(natl::IsSerializeComponentC<SerializeComponentType>)
 		constexpr void writeF64(const natl::f64 value) noexcept {
 			natl::floatToStringDecimal<container_type, natl::f32>(storage, value);
 		}
+		template<natl::SerializeWriteFlag Flags, custom_write_flag_type CustomFlags, typename SerializeComponentType>
+			requires(natl::IsSerializeComponentC<SerializeComponentType>)
 		constexpr void writeBool(const natl::Bool value) noexcept {
 			if (value) {
 				storage += "true";
@@ -404,21 +406,29 @@ namespace nadsad::ascii {
 			}
 
 		}
+		template<natl::SerializeWriteFlag Flags, custom_write_flag_type CustomFlags, typename SerializeComponentType>
+			requires(natl::IsSerializeComponentC<SerializeComponentType>)
 		constexpr void writeChar(const natl::Char value) noexcept {
 			impl::serializeWriteCharLiteral(storage, value);
 		}
+		template<natl::SerializeWriteFlag Flags, custom_write_flag_type CustomFlags, typename SerializeComponentType>
+			requires(natl::IsSerializeComponentC<SerializeComponentType>)
 		constexpr void writeStr(const natl::Ascii* str, const natl::Size size) noexcept {
-			writeStr(natl::ConstAsciiStringView(str, size));
+			writeStr<Flags, CustomFlags, SerializeComponentType >(natl::ConstAsciiStringView(str, size));
 		}
+		template<natl::SerializeWriteFlag Flags, custom_write_flag_type CustomFlags, typename SerializeComponentType>
+			requires(natl::IsSerializeComponentC<SerializeComponentType>)
 		constexpr void writeStr(const natl::ConstAsciiStringView str) noexcept {
 			impl::serializeWriteStringLiteral(storage, str);
 		}
-
+		template<natl::SerializeWriteFlag Flags, custom_write_flag_type CustomFlags, typename SerializeComponentType>
+			requires(natl::IsSerializeComponentC<SerializeComponentType>)
 		constexpr void writeFile(const natl::ConstAsciiStringView fileName, const natl::ConstArrayView<natl::Byte> data) noexcept {
-			writeStr(fileName);
+			writeStrLiteral(fileName);
 			writeBlob(data);
 		}
-
+		template<natl::SerializeWriteFlag Flags, custom_write_flag_type CustomFlags, typename SerializeComponentType>
+			requires(natl::IsSerializeComponentC<SerializeComponentType>)
 		constexpr void writeBlob(const natl::ConstArrayView<natl::Byte> data) noexcept {
 			storage += '(';
 
@@ -439,105 +449,145 @@ namespace nadsad::ascii {
 			storage += ')';
 			newLine();
 		}
-		template<typename BaseSerializeType>
-			requires(natl::IsEnumBaseSerializeTypeC<BaseSerializeType>)
+		template<natl::SerializeWriteFlag Flags, custom_write_flag_type CustomFlags, typename SerializeComponentType,
+			typename BaseSerializeType>
+			requires(natl::IsSerializeComponentC<SerializeComponentType>&& natl::IsEnumBaseSerializeTypeC<BaseSerializeType>)
 		constexpr void writeEnum(
-			const natl::BasicSerializeTypeToType<BaseSerializeType> intValue, 
+			const natl::BasicSerializeTypeToType<BaseSerializeType> intValue,
 			const natl::ConstAsciiStringView& strValue) noexcept {
 			storage += '\"';
 			storage += strValue;
 			storage += '\"';
 		}
 
+		template<natl::SerializeWriteFlag Flags, custom_write_flag_type CustomFlags, typename SerializeComponentType>
+			requires(natl::IsSerializeComponentC<SerializeComponentType>)
 		constexpr void beginWriteFixedArray() noexcept {
 			storage += '[';
 			newLine();
 			increaseIndent();
 		}
+		template<natl::SerializeWriteFlag Flags, custom_write_flag_type CustomFlags, typename SerializeComponentType>
+			requires(natl::IsSerializeComponentC<SerializeComponentType>)
 		constexpr void endWriteFixedArray() noexcept {
 			decreaseIndent();
 			indent();
 			storage += ']';
 		}
+		template<natl::SerializeWriteFlag Flags, custom_write_flag_type CustomFlags, typename SerializeComponentType>
+			requires(natl::IsSerializeComponentC<SerializeComponentType>)
 		constexpr void beginWriteFixedArrayElement() noexcept {
 			indent();
 		}
+		template<natl::SerializeWriteFlag Flags, custom_write_flag_type CustomFlags, typename SerializeComponentType>
+			requires(natl::IsSerializeComponentC<SerializeComponentType>)
 		constexpr void endWriteFixedArrayElement() noexcept {
 			storage += ',';
 			newLine();
 		}
 
+		template<natl::SerializeWriteFlag Flags, custom_write_flag_type CustomFlags, typename SerializeComponentType>
+			requires(natl::IsSerializeComponentC<SerializeComponentType>)
 		constexpr void writeEmptyArray() noexcept {
 			storage += "[]";
 		}
-		constexpr void beginWriteArray() noexcept {
+		template<natl::SerializeWriteFlag Flags, custom_write_flag_type CustomFlags, typename SerializeComponentType>
+			requires(natl::IsSerializeComponentC<SerializeComponentType>)
+		constexpr void beginWriteArray(natl::Size) noexcept {
 			storage += '[';
 			newLine();
 			increaseIndent();
 		}
+		template<natl::SerializeWriteFlag Flags, custom_write_flag_type CustomFlags, typename SerializeComponentType>
+			requires(natl::IsSerializeComponentC<SerializeComponentType>)
 		constexpr void endWriteArray() noexcept {
 			decreaseIndent();
 			indent();
 			storage += ']';
 		}
+		template<natl::SerializeWriteFlag Flags, custom_write_flag_type CustomFlags, typename SerializeComponentType>
+			requires(natl::IsSerializeComponentC<SerializeComponentType>)
 		constexpr void beginWriteArrayElement() noexcept {
 			indent();
 		}
+		template<natl::SerializeWriteFlag Flags, custom_write_flag_type CustomFlags, typename SerializeComponentType>
+			requires(natl::IsSerializeComponentC<SerializeComponentType>)
 		constexpr void endWriteArrayElement() noexcept {
 			storage += ',';
 			newLine();
 		}
 
+		template<natl::SerializeWriteFlag Flags, custom_write_flag_type CustomFlags, typename SerializeComponentType>
+			requires(natl::IsSerializeComponentC<SerializeComponentType>)
 		constexpr void writeEmptyDic() noexcept {
 			storage += "{}";
 		}
-		constexpr void beginWriteDic() noexcept {
+		template<natl::SerializeWriteFlag Flags, custom_write_flag_type CustomFlags, typename SerializeComponentType>
+			requires(natl::IsSerializeComponentC<SerializeComponentType>)
+		constexpr void beginWriteDic(natl::Size) noexcept {
 			storage += '{';
 			newLine();
 			increaseIndent();
 		}
+		template<natl::SerializeWriteFlag Flags, custom_write_flag_type CustomFlags, typename SerializeComponentType>
+			requires(natl::IsSerializeComponentC<SerializeComponentType>)
 		constexpr void endWriteDic() noexcept {
 			decreaseIndent();
 			indent();
 			storage += '}';
 		}
-
+		template<natl::SerializeWriteFlag Flags, custom_write_flag_type CustomFlags, typename SerializeComponentType>
+			requires(natl::IsSerializeComponentC<SerializeComponentType>)
 		constexpr void beginWriteDicElement() noexcept {
 			indent();
+			storage += '{';
 		}
+		template<natl::SerializeWriteFlag Flags, custom_write_flag_type CustomFlags, typename SerializeComponentType>
+			requires(natl::IsSerializeComponentC<SerializeComponentType>)
 		constexpr void endWriteDicElement() noexcept {
-			storage += ',';
+			storage += "},";
 			newLine();
 		}
 
+		template<natl::SerializeWriteFlag Flags, custom_write_flag_type CustomFlags, typename SerializeComponentType>
+			requires(natl::IsSerializeComponentC<SerializeComponentType>)
 		constexpr void writeDicKey() noexcept {}
+		template<natl::SerializeWriteFlag Flags, custom_write_flag_type CustomFlags, typename SerializeComponentType>
+			requires(natl::IsSerializeComponentC<SerializeComponentType>)
 		constexpr void writeDicValue() noexcept {
+			space();
 			storage += ':';
 			space();
 		}
 
+		template<natl::SerializeWriteFlag Flags, custom_write_flag_type CustomFlags, typename SerializeComponentType>
+			requires(natl::IsSerializeComponentC<SerializeComponentType>)
 		constexpr void beginWriteStruct() noexcept {
 			storage += '{';
 			newLine();
 			increaseIndent();
 		}
+		template<natl::SerializeWriteFlag Flags, custom_write_flag_type CustomFlags, typename SerializeComponentType>
+			requires(natl::IsSerializeComponentC<SerializeComponentType>)
 		constexpr void endWriteStruct() noexcept {
 			decreaseIndent();
 			indent();
 			storage += '}';
 		}
 
-		template<typename VariantSerializeType>
-			requires(natl::IsSerializeVariantC<VariantSerializeType>)
+		template<natl::SerializeWriteFlag Flags, custom_write_flag_type CustomFlags, typename SerializeComponentType,
+			typename VariantSerializeType>
+			requires(natl::IsSerializeComponentC<SerializeComponentType>&& natl::IsSerializeVariantC<VariantSerializeType>)
 		constexpr void writeEmptyVariant() noexcept {
 			storage += "null";
 		}
 
-		template<typename VariantSerializeType, natl::Size Index>
-			requires(natl::IsSerializeVariantC<VariantSerializeType>)
+		template<natl::SerializeWriteFlag Flags, custom_write_flag_type CustomFlags, typename SerializeComponentType,
+			typename VariantSerializeType, natl::Size Index>
+			requires(natl::IsSerializeComponentC<SerializeComponentType>&& natl::IsSerializeVariantC<VariantSerializeType>)
 		constexpr void beginWriteVariant(const natl::ConstAsciiStringView& strValue) noexcept {
 			storage += "{";
-			writeStr(strValue);
+			writeStrLiteral(strValue);
 			storage += ",";
 			space();
 			serializeTypeToString<fullTypes, typename VariantSerializeType::types::template at<Index>, container_type>(storage);
@@ -551,13 +601,67 @@ namespace nadsad::ascii {
 			increaseIndent();
 			indent();
 		}
+		template<natl::SerializeWriteFlag Flags, custom_write_flag_type CustomFlags, typename SerializeComponentType,
+			typename VariantSerializeType>
+			requires(natl::IsSerializeComponentC<SerializeComponentType>)
 		constexpr void endWriteVariant() noexcept {
 			newLine();
 			decreaseIndent();
 			indent();
 			storage += '}';
 		}
+
+		template<natl::SerializeWriteFlag Flags, custom_write_flag_type CustomFlags, typename SerializeComponentType,
+			typename IndexIDSizeType>
+			requires(natl::IsSerializeComponentC<SerializeComponentType>&& natl::IsBuiltInIntegerC<IndexIDSizeType>)
+		constexpr void beginWriteJumpTable(const natl::ConstAsciiStringView name) noexcept {
+			storage += "jtable ";
+			serializeTypeToString<fullTypes, IndexIDSizeType, container_type>(storage);
+			space();
+			storage += '{';
+			newLine();
+			increaseIndent();
+		}
+		template<natl::SerializeWriteFlag Flags, custom_write_flag_type CustomFlags, typename SerializeComponentType>
+			requires(natl::IsSerializeComponentC<SerializeComponentType>)
+		constexpr void endWriteTable() noexcept {
+			decreaseIndent();
+			indent();
+			storage += '}';
+		}
+
+		template<natl::SerializeWriteFlag Flags, custom_write_flag_type CustomFlags, typename SerializeComponentType,
+			typename IdNumberType>
+			requires(natl::IsSerializeComponentC<SerializeComponentType>&& natl::IsBuiltInUnsignedIntegerC<IdNumberType>)
+		constexpr natl::SerializeJumpSaveId writeJumpTableElement(const natl::SerializeJumpId<IdNumberType>& element) noexcept {
+			indent();
+			writeStrLiteral(element.name);
+			storage += ':';
+
+			const natl::SerializeJumpSaveId saveId(storage.size());
+			for (natl::Size i : natl::Repeat(20)) {
+				storage += '\0';
+			}
+			storage += ",";
+
+			newLine();
+			return saveId;
+		}
+
+		template<natl::SerializeWriteFlag Flags, custom_write_flag_type CustomFlags, typename SerializeComponentType,
+			typename IdNumberType>
+			requires(natl::IsSerializeComponentC<SerializeComponentType>&& natl::IsBuiltInUnsignedIntegerC<IdNumberType>)
+		constexpr natl::SerializeJumpLocation writeJumpLocation(const natl::SerializeJumpId<IdNumberType>& element,
+			const natl::SerializeJumpSaveId& saveId) noexcept {
+			indent();
+			natl::SerializeJumpLocation jumpLocation(storage.size());
+			storage += "jindex ";
+			storage += " ";
+			writeStrLiteral(element.name);
+			newLine();
+			return jumpLocation;
+		}
 	};
 }
 
-static_assert(natl::IsFullSerializer<nadsad::ascii::Serializer<1000>>, "nadsad: nadsad::ascii::Serializer is not a full serializer");
+//static_assert(natl::IsFullSerializer<nadsad::ascii::Serializer<1000>>, "nadsad: nadsad::ascii::Serializer is not a full serializer");

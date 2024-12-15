@@ -1,51 +1,36 @@
 
-//nadsad
+constexpr inline natl::ConstAsciiStringView natlTestFrom = "NadsadIntegerTest";
+
+//own
 #include "../testUtils.h"
-#include <natl/processing/serializationUtils.h>
-#include <nadsad/nadsad.h>
+
+constexpr natl::Bool oneIntegerTest() noexcept {
+	return nadsad::testFile<
+		nadsad::ascii::Serializer<1000, natl::SerializeFlag::pretty>, 
+		nadsad::ascii::Deserializer<
+			natl::ErrorHandlingFlag::shorten, 
+			natl::DummyDeserializeElementInfo, 
+			natl::FullDeserializeErrorHandler<8>>
+	>("pretty assci serializer and deserializer", "integer/oneInteger.nadsada");
+}
+
+constexpr natl::Bool allIntegersTest() noexcept {
+	return nadsad::testFile<
+		nadsad::ascii::Serializer<1000, natl::SerializeFlag::pretty>,
+		nadsad::ascii::Deserializer<
+		natl::ErrorHandlingFlag::shorten,
+		natl::DummyDeserializeElementInfo,
+		natl::FullDeserializeErrorHandler<8>>
+	>("pretty assci serializer and deserializer", "integer/allIntegers.nadsada");
+}
+
+constexpr natl::Bool tests() noexcept {
+	natl::Test test(natlTestFrom, "all", natl::TestType::root);
+	natl::subTestAssert(test, oneIntegerTest());
+	natl::subTestAssert(test, allIntegersTest());
+	return test;
+}
 
 int main() noexcept {
-	natl::Option<natl::StringByteSize<10000>> simpleTestFile = nadsad::loadTestFile<10000>("integer/simpleTest.nadsad");
-	if (simpleTestFile.doesNotHaveValue()) { 
-		return 0; 
-	}
-
-	nadsad::ascii::LexicalInfo lexicalInfo;
-	{
-		const natl::ConstAsciiStringView source = simpleTestFile.value().toStringView();
-		lexicalInfo = nadsad::ascii::lexicalAnalysis(source);
-	}
-
-	nadsad::ascii::Serializer<1000, natl::SerializeFlag::pretty> serializer{};
-	natl::serializeWriteNamed(serializer, "lexical", lexicalInfo);
-	natl::println(serializer.output());
-
-	nadsad::ascii::Deserializer<natl::ErrorHandlingFlag::shorten, natl::DummyDeserializeElementInfo, natl::FullDeserializeErrorHandler<8>> deserializer;
-	const natl::Bool sourceProccessed = deserializer.addSource(serializer.output());
-	if (sourceProccessed) {
-		auto deserializerScopeExpect = deserializer.begin();
-		if (deserializerScopeExpect.hasValue()) {
-			auto deserializerScope = deserializerScopeExpect.value();
-
-			nadsad::ascii::LexicalInfo deserializedLexicalInfo;
-			natl::String sourceDst;
-
-			auto lexicalError = natl::deserializeReadNamedToDst<decltype(deserializer), nadsad::ascii::LexicalInfo>(
-				deserializer, deserializerScope, "lexical", deserializedLexicalInfo, sourceDst);
-
-			if(lexicalError.hasValue()) {
-				nadsad::ascii::Serializer<1000, natl::SerializeFlag::pretty> errorSerializer{};
-				deserializer.serializeSourceProccessState(errorSerializer);
-				natl::println(errorSerializer.output());
-				natl::println(lexicalError.value().toMessage<natl::String256>());
-				return 0;
-			}
-
-			auto deserializerEndError = deserializer.end(deserializerScopeExpect.value());
-		}
-	} else {
-		nadsad::ascii::Serializer<1000, natl::SerializeFlag::pretty> errorSerializer{};
-		deserializer.serializeSourceProccessState(errorSerializer);
-		natl::println(errorSerializer.output());
-	}
+	tests();
 }

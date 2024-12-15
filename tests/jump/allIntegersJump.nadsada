@@ -1,0 +1,57 @@
+jtable ui64 "jumpTable" {
+	"pos1" : null
+	"pos2" : null
+	"pos3" : null
+}
+
+"decPreExtInteger" ui64: #dec#1234,
+"decPreExtIntegerPostExtI8" i8: #dec#1234_i8,
+"decPreExtIntegerPostExtI16" i16: #dec#1234_i16,
+"decPreExtIntegerPostExtI32" i32: #dec#1234_i32,
+"decPreExtIntegerPostExtI64" i64: #dec#1234_i64,
+"decPreExtIntegerPostExtUI8" ui8: #dec#1234_ui8,
+"decPreExtIntegerPostExtUI16" ui16: #dec#1234_ui16,
+"decPreExtIntegerPostExtUI32" ui32: #dec#1234_ui32,
+"decPreExtIntegerPostExtUI64" ui64: #dec#1234_ui64,
+
+"array" array[ui64]: [1, 2, 3, 4, 5],
+"dic" array{ui64, ui64}: [{1 : 1}, {2 : 2}, {3 : 3}, {4 : 4}, {5 : 5}],
+"struct" struct{ui64}: {
+	"member" ui64: 1;
+}
+
+jindex "pos1"
+"hexPreExtInteger" ui64: #hex#ffff,
+"hexPreExtIntegerPostExtI8" i8: #hex#ffff_i8,
+"hexPreExtIntegerPostExtI16" i16: #hex#ffff_i16,
+"hexPreExtIntegerPostExtI32" i32: #hex#ffff_i32,
+"hexPreExtIntegerPostExtI64" i64: #hex#ffff_i64,
+"hexPreExtIntegerPostExtUI8" ui8: #hex#ffff_ui8,
+"hexPreExtIntegerPostExtUI16" ui16: #hex#ffff_ui16,
+"hexPreExtIntegerPostExtUI32" ui32: #hex#ffff_ui32,
+"hexPreExtIntegerPostExtUI64" ui64: #hex#ffff_ui64,
+
+"array" array[ui64]: [1, 2, 3, 4, 5],
+"dic" array{ui64, ui64}: [{1 : 1}, {2 : 2}, {3 : 3}, {4 : 4}, {5 : 5}],
+"struct" struct{ui64}: {
+	"member" ui64: 1;
+}
+
+jindex "pos2"
+"binPreExtInteger" ui64: #bin#1010,
+"binPreExtIntegerPostExtI8" i8: #bin#1010_i8,
+"binPreExtIntegerPostExtI16" i16: #bin#1010_i16,
+"binPreExtIntegerPostExtI32" i32: #bin#1010_i32,
+"binPreExtIntegerPostExtI64" i64: #bin#1010_i64,
+"binPreExtIntegerPostExtUI8" ui8: #bin#1010_ui8,
+"binPreExtIntegerPostExtUI16" ui16: #bin#1010_ui16,
+"binPreExtIntegerPostExtUI32" ui32: #bin#1010_ui32,
+"binPreExtIntegerPostExtUI64" ui64: #bin#1010_ui64,
+
+"array" array[ui64]: [1, 2, 3, 4, 5],
+"dic" array{ui64, ui64}: [{1 : 1}, {2 : 2}, {3 : 3}, {4 : 4}, {5 : 5}],
+"struct" struct{ui64}: {
+	"member" ui64: 1;
+}
+
+jindex "pos3"
