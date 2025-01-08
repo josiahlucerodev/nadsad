@@ -454,9 +454,9 @@ namespace nadsad::ascii {
 		case TokenType::keywordVariant:
 			return "keyword variant";
 		case TokenType::keywordJTable:
-			return "keyword table";
+			return "keyword jtable";
 		case TokenType::keywordJIndex:
-			return "keyword index";
+			return "keyword jindex";
 		case TokenType::keywordNull:
 			return "keyword null";
 		case TokenType::keywordTrue:
@@ -1496,7 +1496,7 @@ namespace nadsad::ascii {
 			const natl::ui64 beginScopeTokenTotalOffset = index + 1;
 			scopeStack.pushBack(ScopeInfo(beginScopeTokenIndex, beginScopeTokenInfoIndex, beginScopeTokenTotalOffset));
 
-			add64BitInteger(0); //scope offset
+			add64BitInteger(0); //scope size
 			add64BitInteger(0); //element count
 			nextCharacter();
 		}
@@ -1511,8 +1511,8 @@ namespace nadsad::ascii {
 
 
 				if(beginType == beginScopeTokenType) {
-					const natl::ui64 size = index - scopeInfo.beginScopeTokenTotalOffset;
-					addTo64BitIntegerAt(scopeInfo.beginScopeTokenInfoIndex, size);
+					const natl::ui64 size = (currentTokenIndex() - scopeInfo.beginScopeTokenIndex) + 1;
+					addTo64BitIntegerAt(scopeInfo.beginScopeTokenInfoIndex, size);					
 				} else {
 					LexicalError& error = newError(LexicalErrorType::nonMatchingBeginScope);
 					error.errorVariant.nonMatchingBeingScope.endScopeTokenIndex = endScopeTokenIndex;

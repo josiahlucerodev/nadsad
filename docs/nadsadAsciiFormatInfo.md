@@ -49,22 +49,21 @@
 
 
 # Value Syntax
-- op value: null or type_value
+- op_value: null or type_value
 - enum_value: string_literal or ui_numeric_literal
 - varaint_index_value: string_literal or ui_numeric_literal
 - variant_value: {(varaint_index_value), "(type_name)"} { (value) }
 - array_value: [ (values), ... ]
 - dic_value: [ { (key) : (value)}, ... ]
-- struct: { (members); ... }
+- struct_value: { (members); ... }
+- blob_value: (( ... )) byte 0xff or 255 is used as escape character
+- file_value: (string_literal) (blob_value) 
 
 # Syntax 
 "{element_name}" {type}: {value},
 
 # Jump Syntax
-jtable_element_id: string_literal or ui_numeric_literal
-
-"element_name" jtable (ui_keyword) { 
-    (jtable_element_id) ui_numeric_literal, ...
-},
-
-jindex,
+- jtable_element_id: string_literal or ui_numeric_literal
+- jtable_jump_pos: null or ui_numeric_literal
+- jtable (ui_keyword) "element_name" { (jtable_element_id) : (jtable_jump_pos), ... }
+- jindex {jtable_element_id}

@@ -316,9 +316,8 @@ namespace nadsad::ascii {
 			impl::serializeWriteStringLiteral(storage, str);
 		}
 	public:
-		constexpr void serializeBegin() noexcept {}
-		constexpr void serializeEnd() noexcept {}
-
+		constexpr void begin() noexcept {}
+		constexpr void end() noexcept {}
 
 		template<natl::SerializeWriteFlag Flags, custom_write_flag_type CustomFlags, typename SerializeComponentType, 
 			typename SerializeType>
@@ -341,11 +340,19 @@ namespace nadsad::ascii {
 			storage += ':';
 			space();
 		}
+
 		template<natl::SerializeWriteFlag Flags, custom_write_flag_type CustomFlags, typename SerializeComponentType>
 			requires(natl::IsSerializeComponentC<SerializeComponentType>)
-		constexpr void writeNull() noexcept {
+		constexpr void beginWriteOptional() noexcept {}
+		template<natl::SerializeWriteFlag Flags, custom_write_flag_type CustomFlags, typename SerializeComponentType>
+			requires(natl::IsSerializeComponentC<SerializeComponentType>)
+		constexpr void endWriteOptional() noexcept {}
+		template<natl::SerializeWriteFlag Flags, custom_write_flag_type CustomFlags, typename SerializeComponentType>
+			requires(natl::IsSerializeComponentC<SerializeComponentType>)
+		constexpr void writeEmptyOptional() noexcept {
 			storage += "null";
 		}
+
 		template<natl::SerializeWriteFlag Flags, custom_write_flag_type CustomFlags, typename SerializeComponentType>
 			requires(natl::IsSerializeComponentC<SerializeComponentType>)
 		constexpr void writeI8(const natl::i8 value) noexcept {
@@ -575,9 +582,8 @@ namespace nadsad::ascii {
 			storage += '}';
 		}
 
-		template<natl::SerializeWriteFlag Flags, custom_write_flag_type CustomFlags, typename SerializeComponentType,
-			typename VariantSerializeType>
-			requires(natl::IsSerializeComponentC<SerializeComponentType>&& natl::IsSerializeVariantC<VariantSerializeType>)
+		template<natl::SerializeWriteFlag Flags, custom_write_flag_type CustomFlags, typename SerializeComponentType>
+			requires(natl::IsSerializeComponentC<SerializeComponentType>)
 		constexpr void writeEmptyVariant() noexcept {
 			storage += "null";
 		}

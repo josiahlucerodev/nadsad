@@ -77,6 +77,9 @@ namespace nadsad::ascii {
 		constexpr natl::ConstAsciiStringView currentTokenString() noexcept {
 			return natl::ConstAsciiStringView(&source[currentTokenOffset], currentTokenSize);
 		}
+		constexpr natl::Bool isTokenIndexOutOfRange() noexcept {
+			return !(tokenIndex < lexicalInfo.tokenUnits.size());
+		}
 		constexpr natl::Bool nextToken() noexcept {
 			const Token currentToken = getCurrentToken();
 			tokenIndex = nextTokenIndex(tokenIndex, currentToken, lexicalInfo.tokenUnits);
@@ -367,6 +370,15 @@ namespace nadsad::ascii {
 				return TestType<SerializeType>::test(deserializer, errorLocation);
 			}
 		};
+		template<> struct TestType<natl::SerializeFile> {
+			constexpr static natl::Option<DeserializeErrorHandler> test(Deserializer& deserializer,
+				const natl::DeserializeErrorLocation errorLocation) noexcept {
+				if (!deserializer.isCurrentToken(TokenType::keywordFile)) {
+					return deserializer.unexpectedTokenOption(TokenType::keywordFile, errorLocation, natl::DeserializeErrorFlag::wrongType);
+				}
+				return {};
+			}
+		};
 		template<typename BaseSerializeType> struct TestType<natl::SerializeEnum<BaseSerializeType>> {
 			constexpr static natl::Option<DeserializeErrorHandler> test(Deserializer& deserializer,
 				const natl::DeserializeErrorLocation errorLocation) noexcept {
@@ -378,15 +390,6 @@ namespace nadsad::ascii {
 					return deserializer.unexpectedEndOfSourceOption(errorLocation);
 				}
 				return TestType<BaseSerializeType>::test(deserializer, errorLocation);
-			}
-		};
-		template<> struct TestType<natl::SerializeFile> {
-			constexpr static natl::Option<DeserializeErrorHandler> test(Deserializer& deserializer,
-				const natl::DeserializeErrorLocation errorLocation) noexcept {
-				if (!deserializer.isCurrentToken(TokenType::keywordFile)) {
-					return deserializer.unexpectedTokenOption(TokenType::keywordFile, errorLocation, natl::DeserializeErrorFlag::wrongType);
-				}
-				return {};
 			}
 		};
 		template<typename ElementType, natl::Size Number> struct TestType<natl::SerializeFixedArray<ElementType, Number>> {
@@ -1063,8 +1066,15 @@ namespace nadsad::ascii {
 		template<natl::DeserializeReadFlag Flags, custom_read_flag_type CustomFlags, typename SerializeComponentType, typename SerilizeType>
 			requires(natl::IsSerializeComponentC<SerializeComponentType>)
 		[[nodiscard]] constexpr natl::Expect<DeserializeInfo<SerilizeType>, DeserializeErrorHandler>
-			readAsOptional(const natl::Bool isNull, DeserializeInfo<natl::SerializeOptional<SerilizeType>>& info) noexcept {
+			beginReadOptional(const natl::Bool isNull, DeserializeInfo<natl::SerializeOptional<SerilizeType>>& info) noexcept {
 			return DeserializeInfo<natl::SerializeOptional<SerilizeType>>{};
+		}
+
+		template<natl::DeserializeReadFlag Flags, custom_read_flag_type CustomFlags, typename SerializeComponentType, typename SerilizeType>
+			requires(natl::IsSerializeComponentC<SerializeComponentType>)
+		[[nodiscard]] constexpr natl::Option<DeserializeErrorHandler>
+			endReadOptional(DeserializeInfo<natl::SerializeOptional<SerilizeType>>& info) noexcept {
+			return natl::OptionEmpty{};
 		}
 
 		private:
@@ -1458,14 +1468,14 @@ namespace nadsad::ascii {
 			natl::SerializeJumpLocation jumpTableLocation(tokenIndex);
 
 			if (!nextToken()) {
-				return unexpectedEndOfSourceOption(errorLocation);
+				return unexpectedEndOfSource(errorLocation);
 			}
 			if (!isCurrentToken(TokenType::keywordJTable)) {
-				return unexpectedTokenOption(TokenType::keywordJTable, errorLocation, natl::DeserializeErrorFlag::wrongType);
+				return unexpectedToken(TokenType::keywordJTable, errorLocation, natl::DeserializeErrorFlag::wrongType);
 			}
 
 			if (!nextToken()) {
-				return unexpectedEndOfSourceOption(errorLocation);
+				return unexpectedEndOfSource(errorLocation);
 			}
 			if (!(isCurrentToken(TokenType::keywordUI8) 
 				|| isCurrentToken(TokenType::keywordUI16)
@@ -1481,7 +1491,7 @@ namespace nadsad::ascii {
 			}
 
 			if (!nextToken()) {
-				return unexpectedEndOfSourceOption(errorLocation);
+				return unexpectedEndOfSource(errorLocation);
 			}
 			if (!isCurrentToken(TokenType::stringLiteral)) {
 				return unexpectedToken(TokenType::stringLiteral, errorLocation, natl::DeserializeErrorFlag::wrongFormatting);
@@ -1511,8 +1521,7 @@ namespace nadsad::ascii {
 			typename IdNumberType, typename ParentType>
 			requires(natl::IsSerializeComponentC<SerializeComponentType>)
 		[[nodiscard]] constexpr natl::Option<DeserializeErrorHandler> endReadJumpTable(
-			DeserializeInfo<ParentType>& info,
-			natl::SerializeJumpTableInfo<IdNumberType>) {
+			DeserializeInfo<ParentType>& info, natl::SerializeJumpTableInfo<IdNumberType>) {
 			return endReadContainer(natl::DeserializeErrorLocation::endReadJumpTable, TokenType::rightCurly);
 		}
 
@@ -1547,6 +1556,13 @@ namespace nadsad::ascii {
 				return natl::unexpected(DeserializeErrorHandler(errorMessage, getErrorLocationDetails(),
 					errorLocation, natl::DeserializeErrorFlag::wrongType));
 			}
+
+			if (!nextToken()) {
+				return unexpectedEndOfSource(errorLocation);
+			}
+			if (!isCurrentToken(TokenType::colon)) {
+				return unexpectedToken(TokenType::colon, errorLocation, natl::DeserializeErrorFlag::wrongFormatting);
+			}
 			
 			if (!nextToken()) {
 				return unexpectedEndOfSource(errorLocation);
@@ -1559,12 +1575,19 @@ namespace nadsad::ascii {
 					return natl::unexpected(valueExpect.error());
 				}
 				const natl::Size jumpLocation = valueExpect.value();
-				jumpInfo.jumpLocation = jumpLocation;
+				jumpInfo.jumpLocation = natl::SerializeJumpLocation(jumpLocation);
 			} else {
 				error_message_string_type errorMessage = "expected null or integer for jump table element value but got ";
 				errorMessage += tokenTypeToDebugString(getCurrentToken().type);
 				return natl::unexpected(DeserializeErrorHandler(errorMessage, getErrorLocationDetails(),
 					errorLocation, natl::DeserializeErrorFlag::wrongType));
+			}
+
+			if (!nextToken()) {
+				return unexpectedEndOfSource(errorLocation);
+			}
+			if (!isCurrentToken(TokenType::comma)) {
+				return unexpectedToken(TokenType::comma, errorLocation, natl::DeserializeErrorFlag::wrongFormatting);
 			}
 
 			return jumpInfo;
@@ -1577,19 +1600,19 @@ namespace nadsad::ascii {
 			natl::SerializeJumpInfo<IdNumberType>& jumpInfo) {
 			constexpr natl::DeserializeErrorLocation errorLocation = natl::DeserializeErrorLocation::readJumpLocation;
 			if (!nextToken()) {
-				return unexpectedEndOfSource(errorLocation);
+				return unexpectedEndOfSourceOption(errorLocation);
 			}
 			if (!isCurrentToken(TokenType::keywordJIndex)) {
-				return unexpectedToken(TokenType::keywordJIndex, errorLocation, natl::DeserializeErrorFlag::wrongFormatting);
+				return unexpectedTokenOption(TokenType::keywordJIndex, errorLocation, natl::DeserializeErrorFlag::wrongFormatting);
 			}
 			natl::SerializeJumpLocation jumpLocation(getCurrentToken().offset);
 
 			if (!nextToken()) {
-				return unexpectedEndOfSource(errorLocation);
+				return unexpectedEndOfSourceOption(errorLocation);
 			}
 			if (isCurrentToken(TokenType::stringLiteral)) {
 				const natl::ConstAsciiStringView jumpLocationNameStringLiteral = currentTokenString();
-				if (!stringLiteralEqualsStr(jumpInfo.jumpId.name, jumpLocationNameStringLiteral)) {
+				if (!stringLiteralEqualsStr(jumpLocationNameStringLiteral, jumpInfo.jumpId.name)) {
 					error_message_string_type errorMessage = "expected jindex name to be ";
 					errorMessage += jumpInfo.jumpId.name;
 					errorMessage += " but actual name was ";
@@ -1641,12 +1664,12 @@ namespace nadsad::ascii {
 
 			if (!nextToken()) {
 				tokenIndex = saveTokenIndex;
-				return unexpectedEndOfSourceOption(errorLocation);
+				return unexpectedEndOfSource(errorLocation);
 			}
 
 			if (isCurrentToken(TokenType::stringLiteral)) {
 				const natl::ConstAsciiStringView jumpLocationNameStringLiteral = currentTokenString();
-				const natl::Bool result = stringLiteralEqualsStr(jumpInfo.jumpId.name, jumpLocationNameStringLiteral);
+				const natl::Bool result = stringLiteralEqualsStr(jumpLocationNameStringLiteral, jumpInfo.jumpId.name);
 				jumpInfo.jumpLocation = jumpLocation;
 				return result;
 			} else if (isTokenInteger(getCurrentToken().type)) {
@@ -1684,22 +1707,31 @@ namespace nadsad::ascii {
 			auto& jumpLocation = jumpInfo.jumpLocation;
 			auto findTokenIndex = lexicalInfo.offsetToTokenIndexMap.find(jumpLocation.value());
 			if (findTokenIndex.hasValue()) {
-				auto testExpect = testJumpLocation(findTokenIndex.value(), errorLocation);
+				auto testExpect = testJumpLocation(jumpInfo, findTokenIndex.value().value, errorLocation);
 				if (testExpect.hasError()) {
 					return testExpect.error();
 				}
 				if (testExpect.value() == true) {
+					tokenIndex = jumpLocation.value();
+					if (!nextToken()) { //skip jindex
+						return unexpectedEndOfSourceOption(errorLocation);
+					}
 					return {};
 				}
 			}
 
 			if (searchKnownLocations) {
 				for (auto&& [offset, jindexTokenIndex] : lexicalInfo.offsetToTokenIndexMap) {
-					auto testExpect = testJumpLocation(jindexTokenIndex.value(), errorLocation);
+					auto testExpect = testJumpLocation(jumpInfo, jindexTokenIndex, errorLocation);
 					if (testExpect.hasError()) {
 						return testExpect.error();
 					}
 					if (testExpect.value() == true) {
+						jumpLocation = natl::SerializeJumpLocation(jindexTokenIndex);
+						tokenIndex = jumpLocation.value();
+						if (!nextToken()) { //skip jindex
+							return unexpectedEndOfSourceOption(errorLocation);
+						}
 						return {};
 					}
 				}
@@ -1707,8 +1739,279 @@ namespace nadsad::ascii {
 
 			error_message_string_type errorMessage = "could not find location of jindex ";
 			errorMessage += jumpInfo.jumpId.name;
-			return natl::unexpected(DeserializeErrorHandler(errorMessage, getErrorLocationDetails(),
-				errorLocation, natl::DeserializeErrorFlag::jump));
+			return DeserializeErrorHandler(errorMessage, getErrorLocationDetails(),
+				errorLocation, natl::DeserializeErrorFlag::jump);
+		}
+
+		//skip 
+		constexpr natl::Option<DeserializeErrorHandler> skipEnd() noexcept {
+			constexpr natl::DeserializeErrorLocation errorLocation = natl::DeserializeErrorLocation::skip;
+
+			if (!nextToken()) {
+				return unexpectedEndOfSourceOption(errorLocation);
+			}
+			if (!isCurrentToken(TokenType::comma)) {
+				return unexpectedTokenOption(TokenType::comma, errorLocation, natl::DeserializeErrorFlag::wrongFormatting);
+			}
+
+			return natl::OptionEmpty{};
+		}
+
+		constexpr natl::Option<DeserializeErrorHandler> skipSingleTokenValue() noexcept {
+			constexpr natl::DeserializeErrorLocation errorLocation = natl::DeserializeErrorLocation::skip;
+			if (!nextToken()) { //skip single token value
+				return unexpectedEndOfSourceOption(errorLocation);
+			}
+
+			return skipEnd();
+		}
+
+		constexpr natl::Option<DeserializeErrorHandler> skipScope(const TokenType& scopeBeginType, const TokenType& scopeEndType) noexcept {
+			constexpr natl::DeserializeErrorLocation errorLocation = natl::DeserializeErrorLocation::skip;
+			if (!nextToken()) {
+				return unexpectedEndOfSourceOption(errorLocation);
+			}
+			if (!isCurrentToken(scopeBeginType)) {
+				return unexpectedTokenOption(scopeBeginType, errorLocation, natl::DeserializeErrorFlag::wrongFormatting);
+			}
+
+			const natl::Size infoIndex = getTokenUnitIndexAfterToken(tokenIndex);
+			const natl::Size scopeSize = getTokenUi64IntegerAt(infoIndex, lexicalInfo.tokenUnits);
+			tokenIndex += scopeSize;
+
+			if (isTokenIndexOutOfRange()) {
+				error_message_string_type errorMessage = "when skipping scope of type ";
+				errorMessage += tokenTypeToDebugString(scopeBeginType);
+				errorMessage += " the stored scope size was too large and caused tokens to go out of bounds";
+				return DeserializeErrorHandler(errorMessage, getErrorLocationDetails(),
+					errorLocation, natl::DeserializeErrorFlag::endOfSource);
+			}
+			if (!isCurrentToken(scopeEndType)) {
+				return unexpectedTokenOption(scopeEndType, errorLocation, natl::DeserializeErrorFlag::wrongFormatting);
+			}
+			return natl::OptionEmpty{};
+		}
+
+		//skip  type
+		template<typename SerializeType>
+		struct SkipType;
+
+		template<> struct SkipType<natl::SerializeI8> {
+			constexpr static natl::Option<DeserializeErrorHandler> skip(Deserializer& deserializer) noexcept {
+				return deserializer.skipSingleTokenValue();
+			}
+		};
+		template<> struct SkipType<natl::SerializeI16> {
+			constexpr static natl::Option<DeserializeErrorHandler> skip(Deserializer& deserializer) noexcept {
+				return deserializer.skipSingleTokenValue();
+			}
+		};
+		template<> struct SkipType<natl::SerializeI32> {
+			constexpr static natl::Option<DeserializeErrorHandler> skip(Deserializer& deserializer) noexcept {
+				return deserializer.skipSingleTokenValue();
+			}
+		};
+		template<> struct SkipType<natl::SerializeI64> {
+			constexpr static natl::Option<DeserializeErrorHandler> skip(Deserializer& deserializer) noexcept {
+				return deserializer.skipSingleTokenValue();
+			}
+		};
+		template<> struct SkipType<natl::SerializeUI8> {
+			constexpr static natl::Option<DeserializeErrorHandler> skip(Deserializer& deserializer) noexcept {
+				return deserializer.skipSingleTokenValue();
+			}
+		};
+		template<> struct SkipType<natl::SerializeUI16> {
+			constexpr static natl::Option<DeserializeErrorHandler> skip(Deserializer& deserializer) noexcept {
+				return deserializer.skipSingleTokenValue();
+			}
+		};
+		template<> struct SkipType<natl::SerializeUI32> {
+			constexpr static natl::Option<DeserializeErrorHandler> skip(Deserializer& deserializer) noexcept {
+				return deserializer.skipSingleTokenValue();
+			}
+		};
+		template<> struct SkipType<natl::SerializeUI64> {
+			constexpr static natl::Option<DeserializeErrorHandler> skip(Deserializer& deserializer) noexcept {
+				return deserializer.skipSingleTokenValue();
+			}
+		};
+
+		template<> struct SkipType<natl::SerializeF32> {
+			constexpr static natl::Option<DeserializeErrorHandler> skip(Deserializer& deserializer) noexcept {
+				return deserializer.skipSingleTokenValue();
+			}
+		};
+		template<> struct SkipType<natl::SerializeF64> {
+			constexpr static natl::Option<DeserializeErrorHandler> skip(Deserializer& deserializer) noexcept {
+				return deserializer.skipSingleTokenValue();
+			}
+		};
+
+		template<> struct SkipType<natl::SerializeBool> {
+			constexpr static natl::Option<DeserializeErrorHandler> skip(Deserializer& deserializer) noexcept {
+				return deserializer.skipSingleTokenValue();
+			}
+		};
+
+		template<> struct SkipType<natl::SerializeChar> {
+			constexpr static natl::Option<DeserializeErrorHandler> skip(Deserializer& deserializer) noexcept {
+				return deserializer.skipSingleTokenValue();
+			}
+		};
+		template<> struct SkipType<natl::SerializeStr> {
+			constexpr static natl::Option<DeserializeErrorHandler> skip(Deserializer& deserializer) noexcept {
+				return deserializer.skipSingleTokenValue();
+			}
+		};
+		template<> struct SkipType<natl::SerializeBlob> {
+			constexpr static natl::Option<DeserializeErrorHandler> skip(Deserializer& deserializer) noexcept {
+				return deserializer.skipSingleTokenValue();
+			}
+		};
+		template<typename SerializeType> struct SkipType<natl::SerializeOptional<SerializeType>> {
+			constexpr static natl::Option<DeserializeErrorHandler> skip(Deserializer& deserializer) noexcept {
+				constexpr natl::DeserializeErrorLocation errorLocation = natl::DeserializeErrorLocation::skip;
+				if (!nextToken()) {
+					return deserializer.unexpectedEndOfSourceOption(errorLocation);
+				}
+
+				if (!deserializer.isCurrentToken(TokenType::keywordNull)) {
+					auto valueTestError = SkipType<SerializeType>::skip(deserializer);
+					if (valueTestError.hasValue()) {
+						return valueTestError;
+					}
+				}
+
+				return deserializer.skipEnd();
+			}
+		};
+
+		template<> struct SkipType<natl::SerializeFile> {
+			constexpr static natl::Option<DeserializeErrorHandler> skip(Deserializer& deserializer) noexcept {
+				constexpr natl::DeserializeErrorLocation errorLocation = natl::DeserializeErrorLocation::skip;
+				if (!deserializer.nextToken()) { //skip file name
+					return deserializer.unexpectedEndOfSourceOption(errorLocation);
+				}
+
+				if (!deserializer.nextToken()) { //skip file blob data
+					return deserializer.unexpectedEndOfSourceOption(errorLocation);
+				}
+
+				return deserializer.skipEnd();
+			}
+		};
+
+		template<typename BaseSerializeType> struct SkipType<natl::SerializeEnum<BaseSerializeType>> {
+			constexpr static natl::Option<DeserializeErrorHandler> skip(Deserializer& deserializer) noexcept {
+				return deserializer.skipSingleTokenValue();
+			}
+		};
+
+		template<typename ElementType, natl::Size Number> struct SkipType<natl::SerializeFixedArray<ElementType, Number>> {
+			constexpr static natl::Option<DeserializeErrorHandler> skip(Deserializer& deserializer) noexcept {
+				auto skipScopeError = deserializer.skipScope(TokenType::leftSquare, TokenType::rightSquare);
+				if (skipScopeError.hasValue()) {
+					return skipScopeError;
+				}
+				return deserializer.skipEnd();
+			}
+		};
+
+		template<typename ElementType> struct SkipType<natl::SerializeArray<ElementType>> {
+			constexpr static natl::Option<DeserializeErrorHandler> skip(Deserializer& deserializer) noexcept {
+				auto skipScopeError = deserializer.skipScope(TokenType::leftSquare, TokenType::rightSquare);
+				if (skipScopeError.hasValue()) {
+					return skipScopeError;
+				}
+				return deserializer.skipEnd();
+			}
+		};
+
+		template<typename KeyType, typename ValueType> struct SkipType<natl::SerializeDic<KeyType, ValueType>> {
+			constexpr static natl::Option<DeserializeErrorHandler> skip(Deserializer& deserializer) noexcept {
+				auto skipScopeError = deserializer.skipScope(TokenType::leftCurly, TokenType::rightCurly);
+				if (skipScopeError.hasValue()) {
+					return skipScopeError;
+				}
+				return deserializer.skipEnd();
+			}
+		};
+		template<typename... MemberTypes> struct SkipType<natl::SerializeStruct<MemberTypes...>> {
+			constexpr static natl::Option<DeserializeErrorHandler> skip(Deserializer& deserializer) noexcept {
+				auto skipScopeError = deserializer.skipScope(TokenType::leftCurly, TokenType::rightCurly);
+				if (skipScopeError.hasValue()) {
+					return skipScopeError;
+				}
+				return deserializer.skipEnd();
+			}
+		};
+
+		template<typename IndexSerializeType, typename... Types> struct SkipType<natl::SerializeVariant<IndexSerializeType, Types...>> {
+			constexpr static natl::Option<DeserializeErrorHandler> skip(Deserializer& deserializer) noexcept {
+				constexpr natl::DeserializeErrorLocation errorLocation = natl::DeserializeErrorLocation::skip;
+				const natl::Size previousTokenIndex = deserializer.tokenIndex;
+				if (!deserializer.nextToken()) {
+					return deserializer.unexpectedEndOfSourceOption(errorLocation);
+				}
+
+				if (!deserializer.isCurrentToken(TokenType::keywordNull)) {
+					deserializer.tokenIndex = previousTokenIndex;
+					auto skipScopeError = deserializer.skipScope(TokenType::leftCurly, TokenType::rightCurly);
+					if (skipScopeError.hasValue()) {
+						return skipScopeError;
+					}
+					auto skipScopeError2 = deserializer.skipScope(TokenType::leftCurly, TokenType::rightCurly);
+					if (skipScopeError2.hasValue()) {
+						return skipScopeError2;
+					}
+
+				}
+
+				return deserializer.skipEnd();
+			}
+		};
+
+		template<typename Type>
+			requires(natl::IsDeserilizableC<Type>)
+		struct SkipType<Type> : SkipType<natl::DeserializeTypeOf<Type>> {};
+		template<typename Type>
+			requires(natl::IsSerializableC<Type> && !natl::IsDeserilizableC<Type>)
+		struct SkipType<Type> : SkipType<natl::SerializeTypeOf<Type>> {};
+
+		template<natl::DeserializeReadFlag Flags, custom_read_flag_type CustomFlags, typename SerializeComponentType,
+			typename Type, typename ParentType>
+			requires(natl::IsSerializeComponentC<SerializeComponentType> && natl::IsDeserilizableC<Type>)
+		[[nodiscard]] constexpr natl::Option<DeserializeErrorHandler> skip(
+			DeserializeInfo<ParentType>& parent, const natl::ConstAsciiStringView name) noexcept {
+			constexpr natl::DeserializeErrorLocation errorLocation = natl::DeserializeErrorLocation::skip;
+			if (!nextToken()) {
+				return unexpectedEndOfSourceOption(errorLocation);
+			}
+
+			if (!isCurrentToken(TokenType::stringLiteral)) {
+				return unexpectedTokenOption(TokenType::stringLiteral, errorLocation, natl::DeserializeErrorFlag::wrongFormatting);
+			}
+			if (!stringLiteralEqualsStr(currentTokenString(), name)) {
+				error_message_string_type errorMessage = "expected name ";
+				errorMessage += name;
+				errorMessage += " but actual name was ";
+				formatStringLiteral<error_message_string_type>(currentTokenString(), errorMessage);
+				return DeserializeErrorHandler(
+					errorMessage, getErrorLocationDetails(),
+					errorLocation, natl::DeserializeErrorFlag::wrongName);
+			}
+
+			while (true) {
+				if (!nextToken()) {
+					return unexpectedEndOfSourceOption(errorLocation);
+				}
+				if (isCurrentToken(TokenType::colon)) {
+					break;
+				}
+			}
+
+			return SkipType<Type>::skip(self());
 		}
 	};
 }

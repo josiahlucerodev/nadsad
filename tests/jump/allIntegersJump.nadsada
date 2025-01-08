@@ -1,7 +1,7 @@
 jtable ui64 "jumpTable" {
-	"pos1" : null
-	"pos2" : null
-	"pos3" : null
+	"pos1" : null,
+	"pos2" : null,
+	"pos3" : null,
 }
 
 "decPreExtInteger" ui64: #dec#1234,
@@ -20,7 +20,6 @@ jtable ui64 "jumpTable" {
 	"member" ui64: 1;
 }
 
-jindex "pos1"
 "hexPreExtInteger" ui64: #hex#ffff,
 "hexPreExtIntegerPostExtI8" i8: #hex#ffff_i8,
 "hexPreExtIntegerPostExtI16" i16: #hex#ffff_i16,
@@ -37,7 +36,35 @@ jindex "pos1"
 	"member" ui64: 1;
 }
 
+jindex "pos1"
+
+"i8" i8: 0,
+"i16" i16: 0,
+"i32" i32: 0,
+"i64" i64: 0,
+
+"ui8" ui8: 0,
+"ui16" ui16: 0,
+"ui32" ui32: 0,
+"ui64" ui64: 0,
+
+"f32" f32: 0,
+"f64" f64: 0,
+
+"option" op ui64: 0,
+"emptyOption" op ui64: null, 
+
+"farray" farray[ui64, 5]: [1, 2, 3, 4, 5],
+"array" array[ui64]: [1, 2, 3, 4, 5],
+"dic" array{ui64, ui64}: {{1 : 1}, {2 : 2}, {3 : 3}, {4 : 4}, {5 : 5}},
+"struct" struct{ui64}: {
+	"member" ui64: 1;
+},
+"variant" variant ui64 {ui64, ui64}: {0, ui64} { 3 },
+"emptyVariant" variant ui64 {ui64, ui64}: null,
+
 jindex "pos2"
+
 "binPreExtInteger" ui64: #bin#1010,
 "binPreExtIntegerPostExtI8" i8: #bin#1010_i8,
 "binPreExtIntegerPostExtI16" i16: #bin#1010_i16,
@@ -48,10 +75,5 @@ jindex "pos2"
 "binPreExtIntegerPostExtUI32" ui32: #bin#1010_ui32,
 "binPreExtIntegerPostExtUI64" ui64: #bin#1010_ui64,
 
-"array" array[ui64]: [1, 2, 3, 4, 5],
-"dic" array{ui64, ui64}: [{1 : 1}, {2 : 2}, {3 : 3}, {4 : 4}, {5 : 5}],
-"struct" struct{ui64}: {
-	"member" ui64: 1;
-}
 
 jindex "pos3"
