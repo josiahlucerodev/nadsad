@@ -51,8 +51,8 @@
 # Value Syntax
 - op_value: null or type_value
 - enum_value: string_literal or ui_numeric_literal
-- varaint_index_value: string_literal or ui_numeric_literal
-- variant_value: {(varaint_index_value), "(type_name)"} { (value) }
+- variant_index_value: string_literal or ui_numeric_literal
+- variant_value: {(variant_index_value), "(type_name)"} { (value) }
 - array_value: [ (values), ... ]
 - dic_value: [ { (key) : (value)}, ... ]
 - struct_value: { (members); ... }

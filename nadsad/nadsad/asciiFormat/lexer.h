@@ -4,6 +4,7 @@
 #include <natl\container\flatHashMap.h>
 #include <natl\container\arrayView.h>
 #include <natl\util\bytes.h>
+#include <natl\serialization.h>
 
 //interface 
 namespace nadsad::ascii {
@@ -2901,7 +2902,7 @@ template<> struct natl::Deserialize<nadsad::ascii::SerializeTokensFullInfo> {
 				return valueError.error().addSource(sourceName, "");
 			}
 
-			auto arrayElementEndError = deserializer.template endReadArrayElement<Flags, CustomFlags, SerializeComponentType>(arrayElement);
+			auto arrayElementEndError = deserializer.template endReadArrayElement<Flags, CustomFlags, SerializeComponentType, type>(arrayElement);
 			if (arrayElementEndError.hasValue()) {
 				return arrayElementEndError.value().addSource(sourceName, "");
 			}

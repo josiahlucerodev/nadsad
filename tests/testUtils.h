@@ -4,7 +4,7 @@
 #include<natl/fundamental/option.h>
 #include<natl/container/string.h>
 #include<natl/system/filesystem.h>
-#include <natl/processing/serializationUtils.h>
+#include <natl/serialization/utils.h>
 #include <natl/util/test.h>
 
 //nadsad
@@ -64,15 +64,19 @@ namespace nadsad {
 		const natl::Bool sourceProccessed = deserializer.addSource(serializer.output());
 		natl::testAssert(testDst, sourceProccessed);
 		if (sourceProccessed) {
-			auto deserializerScopeExpect = deserializer.begin();
+			constexpr auto readFlag = natl::DeserializeReadFlag::v_default;
+			constexpr auto customReadFlag = natl::DefaultCustomDeserializeReadFlag<decltype(deserializer)>;
+
+
+			auto deserializerScopeExpect = deserializer.begin<readFlag, customReadFlag>();
 			if (deserializerScopeExpect.hasValue()) {
 				auto deserializerScope = deserializerScopeExpect.value();
 
 				nadsad::ascii::LexicalInfo deserializedLexicalInfo;
 				natl::String sourceDst;
 
-				auto lexicalError = natl::deserializeReadNamedToDst<decltype(deserializer), natl::DeserializeReadFlag::v_default, 
-					natl::DefaultCustomDeserializeReadFlag<decltype(deserializer)>, natl::SerializeGlobalComponent, nadsad::ascii::LexicalInfo>(
+				auto lexicalError = natl::deserializeReadNamedToDst<decltype(deserializer), readFlag, customReadFlag, 
+					natl::SerializeGlobalComponent, nadsad::ascii::LexicalInfo>(
 					deserializer, deserializerScope, "lexical", deserializedLexicalInfo, sourceDst);
 
 				if (lexicalError.hasValue()) {
@@ -88,7 +92,7 @@ namespace nadsad {
 					return true;
 				}
 
-				auto deserializerEndError = deserializer.end(deserializerScopeExpect.value());
+				auto deserializerEndError = deserializer.end<readFlag, customReadFlag>(deserializerScopeExpect.value());
 			}
 		} else {
 			using error_serializer = nadsad::ascii::Serializer<1000, natl::SerializeFlag::pretty>;

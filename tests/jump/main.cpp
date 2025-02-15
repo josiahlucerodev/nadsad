@@ -35,7 +35,7 @@ natl::Bool allIntegersJumpTest() noexcept {
 		natl::testAssert(test, false, "process source");
 	}
 
-	auto globalScopeExpect = deserializer.begin();
+	auto globalScopeExpect = deserializer.begin<readFlag, customReadFlag>();
 	natl::testAssert(test, globalScopeExpect.hasValue(), "begin deserializer");
 	if (globalScopeExpect.hasError()) {
 		natl::println(globalScopeExpect.error().toMessage<natl::String256>());
@@ -87,7 +87,7 @@ natl::Bool allIntegersJumpTest() noexcept {
 		return test;
 	}
 	
-	auto deserializerEndError = deserializer.end(globalScope);
+	auto deserializerEndError = deserializer.end<readFlag, customReadFlag>(globalScope);
 	natl::testAssert(test, !deserializerEndError.hasValue(), "end deserializer");
 	if (deserializerEndError.hasValue()) {
 		natl::println(deserializerEndError.value().toMessage<natl::String256>());

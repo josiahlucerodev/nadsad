@@ -1,8 +1,7 @@
 #pragma once 
 
 //natl
-#include <natl/processing/serialization.h>
-#include <natl/processing/serializationJump.h>
+#include <natl/serialization.h>
 #include <natl/util/enum.h>
 
 //interface 
@@ -322,7 +321,7 @@ namespace nadsad::ascii {
 		template<natl::SerializeWriteFlag Flags, custom_write_flag_type CustomFlags, typename SerializeComponentType, 
 			typename SerializeType>
 			requires(natl::IsSerializeComponentC<SerializeComponentType>)
-		constexpr void beginWrite(const natl::ConstAsciiStringView name) noexcept {
+		constexpr void beginWriteNamed(const natl::ConstAsciiStringView name) noexcept {
 			indent();
 			writeStrLiteral(name);
 			storage += ' ';
@@ -330,7 +329,7 @@ namespace nadsad::ascii {
 		}
 		template<natl::SerializeWriteFlag Flags, custom_write_flag_type CustomFlags, typename SerializeComponentType>
 			requires(natl::IsSerializeComponentC<SerializeComponentType>)
-		constexpr void endWrite() noexcept {
+		constexpr void endWriteNamed() noexcept {
 			storage += ',';
 			newLine();
 		}
@@ -670,4 +669,6 @@ namespace nadsad::ascii {
 	};
 }
 
-//static_assert(natl::IsFullSerializer<nadsad::ascii::Serializer<1000>>, "nadsad: nadsad::ascii::Serializer is not a full serializer");
+static_assert(
+	natl::IsFullSerializerC<nadsad::ascii::Serializer<1000, natl::SerializeFlag::pretty>>, 
+	"nadsad: nadsad::ascii::Serializer is not a full natl::serializer");
