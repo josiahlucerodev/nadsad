@@ -32,7 +32,7 @@ namespace nadsad {
 		return fileContents;
 	}
 
-	void outputErrorFile( const natl::ConstAsciiStringView& relitivePath, natl::Size size, natl::Byte* src) noexcept {
+	void outputErrorFile(const natl::ConstAsciiStringView& relitivePath, natl::Size size, natl::Byte* src) noexcept {
 		natl::FileHandle file = natl::openFile(relitivePath.c_str(), natl::FileOpenMode::writeDestroy);
 		natl::writeFile(file,
 			natl::FileOffset(0),
@@ -40,6 +40,16 @@ namespace nadsad {
 			src);
 		natl::closeFile(file);
 	}
+
+	void outputInfoFile(const natl::ConstAsciiStringView& relitivePath, natl::Size size, natl::Byte* src) noexcept {
+		natl::FileHandle file = natl::openFile(relitivePath.c_str(), natl::FileOpenMode::writeDestroy);
+		natl::writeFile(file,
+			natl::FileOffset(0),
+			natl::FileCount(size),
+			src);
+		natl::closeFile(file);
+	}
+
 	template<typename Serializer, typename Deserializer>
 	constexpr natl::Bool baseTestFile(natl::Test& testDst, natl::String& fileContent,
 		nadsad::ascii::LexicalInfo& lexicalInfoDst, Serializer& serializer,
@@ -56,15 +66,24 @@ namespace nadsad {
 			lexicalInfoDst = nadsad::ascii::lexicalAnalysis(source);
 		}
 
-		natl::serializeWriteNamed<Serializer, natl::SerializeWriteFlag::v_default, 
-			typename Serializer::custom_write_flag_type{},  natl::SerializeGlobalComponent>(
+		auto beginError = serializer.begin();
+		if (beginError.hasValue()) { return false; }
+
+		auto writeError = natl::serializeWriteNamed<Serializer, natl::SerializeWriteFlag::none, 
+			typename Serializer::custom_write_flag_type{},  natl::SerializeGlobalComponent<nadsad::ascii::LexicalInfo>>(
 				serializer, "lexical", lexicalInfoDst);
+		if (writeError.hasValue()) { 
+			natl::printlnf("Serialize error:\n", writeError.value().template getMessage<natl::String>());
+			return false; 
+		}
+		auto endError = serializer.end();
+		if (endError.hasValue()) { return false; }
 
 		Deserializer deserializer;
 		const natl::Bool sourceProccessed = deserializer.addSource(serializer.output());
 		natl::testAssert(testDst, sourceProccessed);
 		if (sourceProccessed) {
-			constexpr auto readFlag = natl::DeserializeReadFlag::v_default;
+			constexpr auto readFlag = natl::DeserializeReadFlag::none;
 			constexpr auto customReadFlag = natl::DefaultCustomDeserializeReadFlag<decltype(deserializer)>;
 
 
@@ -76,29 +95,29 @@ namespace nadsad {
 				natl::String sourceDst;
 
 				auto lexicalError = natl::deserializeReadNamedToDst<decltype(deserializer), readFlag, customReadFlag, 
-					natl::SerializeGlobalComponent, nadsad::ascii::LexicalInfo>(
+					natl::SerializeGlobalComponent<nadsad::ascii::LexicalInfo>, nadsad::ascii::LexicalInfo>(
 					deserializer, deserializerScope, "lexical", deserializedLexicalInfo, sourceDst);
 
 				if (lexicalError.hasValue()) {
-					using error_serializer = nadsad::ascii::Serializer<1000, natl::SerializeFlag::pretty>;
+					using error_serializer = nadsad::ascii::Serializer<1000, natl::SerializeFlags::pretty, natl::DummySerializeErrorHandler>;
 					error_serializer errorSerializer{};
-					deserializer.serializeSourceProccessState<error_serializer, natl::SerializeWriteFlag::v_default,
-						 natl::DefaultCustomSerializeWriteFlag<error_serializer>, natl::SerializeGlobalComponent>(errorSerializer);
+					[[maybe_unused]] auto error = deserializer.serializeSourceProccessState<error_serializer, natl::SerializeWriteFlag::none,
+						 natl::DefaultCustomSerializeWriteFlag<error_serializer>, natl::SerializeGlobalComponent<nadsad::ascii::LexicalInfo>>(errorSerializer);
 
 					nadsad::outputErrorFile("error.nadsada", errorSerializer.output().size(), (natl::Byte*)errorSerializer.output().data());
 					nadsad::outputErrorFile("state.nadsada", serializer.output().size(), (natl::Byte*)serializer.output().data());
 
-					natl::println(lexicalError.value().toMessage<natl::String256>());
+					natl::println(lexicalError.value().getMessage<natl::String256>());
 					return true;
 				}
 
 				auto deserializerEndError = deserializer.end<readFlag, customReadFlag>(deserializerScopeExpect.value());
 			}
 		} else {
-			using error_serializer = nadsad::ascii::Serializer<1000, natl::SerializeFlag::pretty>;
+			using error_serializer = nadsad::ascii::Serializer<1000, natl::SerializeFlags::pretty, natl::DummySerializeErrorHandler>;
 			error_serializer errorSerializer{};
-			deserializer.serializeSourceProccessState<error_serializer, natl::SerializeWriteFlag::v_default,
-				natl::DefaultCustomSerializeWriteFlag<error_serializer>, natl::SerializeGlobalComponent>(errorSerializer);
+			[[maybe_unused]] auto error = deserializer.serializeSourceProccessState<error_serializer, natl::SerializeWriteFlag::none,
+				natl::DefaultCustomSerializeWriteFlag<error_serializer>, natl::SerializeGlobalComponent<nadsad::ascii::LexicalInfo>>(errorSerializer);
 			natl::println(errorSerializer.output());
 		}
 

@@ -1520,7 +1520,7 @@ namespace nadsad::ascii {
 					error.errorVariant.nonMatchingBeingScope.wrongBeingScopeTokenIndex = scopeInfo.beginScopeTokenIndex;
 				}
 
-				scopeStack.pop_back();
+				scopeStack.popBack();
 			} else {
 				LexicalError& error = newError(LexicalErrorType::noBeingScope);
 				error.errorVariant.noBeginScope.endScopeTokenIndex = endScopeTokenIndex;
@@ -2101,14 +2101,17 @@ namespace nadsad::ascii {
 template<> struct natl::Serialize<nadsad::ascii::TokenType> {
 	using as_type = SerializeEnum<UnderlyingType<nadsad::ascii::TokenType>>;
 	using type = nadsad::ascii::TokenType;
-	template<typename Serializer> using error_type = void;
+	template<typename Serializer> using error_type = StandardSerializeError<Serializer>;
+	constexpr static ConstAsciiStringView sourceName = "natl::Serialize<nadsad::ascii::TokenType>::write";
 
 	template<typename Serializer, SerializeWriteFlag Flags,
 		CustomSerializeWriteFlag<Serializer> CustomFlags, typename SerializeComponentType>
 		requires(natl::CanSerializeEnum<Serializer> && IsSerializeComponentC<SerializeComponentType>)
-	constexpr static void write(Serializer& serializer, const nadsad::ascii::TokenType tokenType) noexcept {
-		serializer.template writeEnum<Flags, CustomFlags, SerializeComponentType, typename as_type::base_serialize_type>(
+	constexpr static natl::Option<error_type<Serializer>> write(Serializer& serializer, const nadsad::ascii::TokenType tokenType) noexcept {
+		auto error = serializer.template writeEnum<Flags, CustomFlags, SerializeComponentType, typename as_type::base_serialize_type>(
 			natl::toUnderlying(tokenType), nadsad::ascii::tokenTypeToString(tokenType));
+		if (error.hasValue()) { return error.value().addSource(sourceName); }
+		return natl::OptionEmpty{};
 	}
 };
 
@@ -2147,14 +2150,17 @@ template<> struct natl::Deserialize<nadsad::ascii::TokenType> {
 template<> struct natl::Serialize<nadsad::ascii::NumericIntType> {
 	using as_type = SerializeEnum<UnderlyingType<nadsad::ascii::NumericIntType>>;
 	using type = nadsad::ascii::NumericIntType;
-	template<typename Serializer> using error_type = void;
+	template<typename Serializer> using error_type = StandardSerializeError<Serializer>;
+	constexpr static ConstAsciiStringView sourceName = "natl::Serialize<nadsad::ascii::NumericIntType>::write";
 
 	template<typename Serializer, SerializeWriteFlag Flags,
 		CustomSerializeWriteFlag<Serializer> CustomFlags, typename SerializeComponentType>
 		requires(natl::CanSerializeEnum<Serializer>&& IsSerializeComponentC<SerializeComponentType>)
-	constexpr static void write(Serializer& serializer, const type intType) noexcept {
-		serializer.template writeEnum<Flags, CustomFlags, SerializeComponentType, typename as_type::base_serialize_type>(
+	constexpr static natl::Option<error_type<Serializer>> write(Serializer& serializer, const type intType) noexcept {
+		auto error = serializer.template writeEnum<Flags, CustomFlags, SerializeComponentType, typename as_type::base_serialize_type>(
 			natl::toUnderlying(intType), nadsad::ascii::numericIntTypeToString(intType));
+		if (error.hasValue()) { return error.value().addSource(sourceName); }
+		return natl::OptionEmpty{};
 	}
 };
 
@@ -2193,14 +2199,17 @@ template<> struct natl::Deserialize<nadsad::ascii::NumericIntType> {
 template<> struct natl::Serialize<nadsad::ascii::NumericFloatType> {
 	using as_type = SerializeEnum<UnderlyingType<nadsad::ascii::NumericFloatType>>;
 	using type = nadsad::ascii::NumericFloatType;
-	template<typename Serializer> using error_type = void;
+	template<typename Serializer> using error_type = StandardSerializeError<Serializer>;
+	constexpr static ConstAsciiStringView sourceName = "natl::Serialize<nadsad::ascii::NumericFloatType>::write";
 
 	template<typename Serializer, SerializeWriteFlag Flags,
 		CustomSerializeWriteFlag<Serializer> CustomFlags, typename SerializeComponentType>
 		requires(natl::CanSerializeEnum<Serializer>&& IsSerializeComponentC<SerializeComponentType>)
-	constexpr static void write(Serializer& serializer, const type floatType) noexcept {
-		serializer.template writeEnum<Flags, CustomFlags, SerializeComponentType, typename as_type::base_serialize_type>(
+	constexpr static natl::Option<error_type<Serializer>> write(Serializer& serializer, const type floatType) noexcept {
+		auto error = serializer.template writeEnum<Flags, CustomFlags, SerializeComponentType, typename as_type::base_serialize_type>(
 			natl::toUnderlying(floatType), nadsad::ascii::numericFloatTypeToString(floatType));
+		if (error.hasValue()) { return error.value().addSource(sourceName); }
+		return natl::OptionEmpty{};
 	}
 };
 
@@ -2240,20 +2249,28 @@ template<> struct natl::Deserialize<nadsad::ascii::NumericFloatType> {
 template<> struct natl::Serialize<nadsad::ascii::TokenNumericUnit> {
 	using as_type = natl::SerializeStruct<natl::ui8>;
 	using type = nadsad::ascii::TokenNumericUnit;
-	template<typename Serializer> using error_type = void;
+	template<typename Serializer> using error_type = StandardSerializeError<Serializer>;
 	constexpr static inline natl::ConstAsciiStringView name = "TokenNumericUnit";
+	constexpr static ConstAsciiStringView sourceName = "natl::Serialize<nadsad::ascii::TokenNumericUnit>::write";
 
 	template<typename Serializer, SerializeWriteFlag Flags,
 		CustomSerializeWriteFlag<Serializer> CustomFlags, typename SerializeComponentType>
 		requires(natl::CanSerializeStructC<Serializer> && IsSerializeComponentC<SerializeComponentType>)
-	constexpr static void write(Serializer& serializer, const type numericUnit) noexcept {
+	constexpr static natl::Option<error_type<Serializer>> write(Serializer& serializer, const type numericUnit) noexcept {
 		using members = as_type::members_serialize_types;
 		using components = natl::SerializeStructMemberComponents<type, as_type>;
 
-		serializer.template beginWriteStruct<Flags, CustomFlags, SerializeComponentType>();
-		serializeWriteNamedMatch<members::at<0>, Serializer, Flags, CustomFlags, components::at<0>>(
+		auto beginError = serializer.template beginWriteStruct<Flags, CustomFlags, SerializeComponentType>();
+		if (beginError.hasValue()) { return beginError.value().addSource(sourceName); }
+
+		auto e0 = serializeWriteNamedMatch<members::at<0>, Serializer, Flags, CustomFlags, components::at<0>>(
 			serializer, "size", numericUnit.size);
-		serializer.template endWriteStruct<Flags, CustomFlags, SerializeComponentType>();
+		if (e0.hasValue()) { return e0.value().addSource(sourceName); }
+
+		auto endError = serializer.template endWriteStruct<Flags, CustomFlags, SerializeComponentType>();
+		if (endError.hasValue()) { return endError.value().addSource(sourceName); }
+
+		return natl::OptionEmpty{};
 	}
 };
 
@@ -2287,22 +2304,32 @@ template<> struct natl::Deserialize<nadsad::ascii::TokenNumericUnit> {
 template<> struct natl::Serialize<nadsad::ascii::TokenNumericWithIntTypeUnit> {
 	using as_type = SerializeStruct<natl::ui8, nadsad::ascii::NumericIntType>;
 	using type = nadsad::ascii::TokenNumericWithIntTypeUnit;
-	template<typename Serializer> using error_type = void;
+	template<typename Serializer> using error_type = StandardSerializeError<Serializer>;
 	constexpr static inline natl::ConstAsciiStringView name = "TokenNumericWithIntTypeUnit";
+	constexpr static ConstAsciiStringView sourceName = "natl::Serialize<nadsad::ascii::TokenNumericWithIntTypeUnit>::write";
 
 	template<typename Serializer, SerializeWriteFlag Flags,
 		CustomSerializeWriteFlag<Serializer> CustomFlags, typename SerializeComponentType>
 		requires(natl::CanSerializeStructC<Serializer> && IsSerializeComponentC<SerializeComponentType>)
-	constexpr static void write(Serializer& serializer, const type intUnit) noexcept {
+	constexpr static natl::Option<error_type<Serializer>> write(Serializer& serializer, const type intUnit) noexcept {
 		using members = as_type::members_serialize_types;
 		using components = natl::SerializeStructMemberComponents<type, as_type>;
 
-		serializer.template beginWriteStruct<Flags, CustomFlags, SerializeComponentType>();
-		serializeWriteNamedMatch<members::at<0>, Serializer, Flags, CustomFlags, components::at<0>>(
+		auto beginError = serializer.template beginWriteStruct<Flags, CustomFlags, SerializeComponentType>();
+		if (beginError.hasValue()) { return beginError.value().addSource(sourceName); }
+
+		auto e0 = serializeWriteNamedMatch<members::at<0>, Serializer, Flags, CustomFlags, components::at<0>>(
 			serializer, "size", intUnit.size);
-		serializeWriteNamedMatch<members::at<1>, Serializer, Flags, CustomFlags, components::at<1>>(
+		if (e0.hasValue()) { return e0.value().addSource(sourceName); }
+		
+		auto e1 = serializeWriteNamedMatch<members::at<1>, Serializer, Flags, CustomFlags, components::at<1>>(
 			serializer, "intType", intUnit.intType);
-		serializer.template endWriteStruct<Flags, CustomFlags, SerializeComponentType>();
+		if (e1.hasValue()) { return e1.value().addSource(sourceName); }
+
+		auto endError = serializer.template endWriteStruct<Flags, CustomFlags, SerializeComponentType>();
+		if (endError.hasValue()) { return endError.value().addSource(sourceName); }
+
+		return natl::OptionEmpty{};
 	}
 };
 
@@ -2353,22 +2380,32 @@ template<> struct natl::Deserialize<nadsad::ascii::TokenNumericWithIntTypeUnit> 
 template<> struct natl::Serialize<nadsad::ascii::TokenNumericWithFloatTypeUnit> {
 	using as_type = SerializeStruct<natl::ui8, nadsad::ascii::NumericFloatType>;
 	using type = nadsad::ascii::TokenNumericWithFloatTypeUnit;
-	template<typename Serializer> using error_type = void;
+	template<typename Serializer> using error_type = StandardSerializeError<Serializer>;
 	constexpr static inline natl::ConstAsciiStringView name = "TokenScopeUnit";
+	constexpr static ConstAsciiStringView sourceName = "natl::Serialize<nadsad::ascii::TokenNumericWithFloatTypeUnit>::write";
 
 	template<typename Serializer, SerializeWriteFlag Flags,
 		CustomSerializeWriteFlag<Serializer> CustomFlags, typename SerializeComponentType>
 		requires(natl::CanSerializeStructC<Serializer> && IsSerializeComponentC<SerializeComponentType>)
-	constexpr static void write(Serializer& serializer, const type floatUnit) noexcept {
+	constexpr static natl::Option<error_type<Serializer>> write(Serializer& serializer, const type floatUnit) noexcept {
 		using members = as_type::members_serialize_types;
 		using components = natl::SerializeStructMemberComponents<type, as_type>;
 
-		serializer.template beginWriteStruct<Flags, CustomFlags, SerializeComponentType>();
-		serializeWriteNamedMatch<members::at<0>, Serializer, Flags, CustomFlags, components::at<0>>(
+		auto beginError = serializer.template beginWriteStruct<Flags, CustomFlags, SerializeComponentType>();
+		if (beginError.hasValue()) { return beginError.value().addSource(sourceName); }
+		
+		auto e0 = serializeWriteNamedMatch<members::at<0>, Serializer, Flags, CustomFlags, components::at<0>>(
 			serializer, "size", floatUnit.size);
-		serializeWriteNamedMatch<members::at<1>, Serializer, Flags, CustomFlags, components::at<1>>(
+		if (e0.hasValue()) { return e0.value().addSource(sourceName); }
+		
+		auto e1 = serializeWriteNamedMatch<members::at<1>, Serializer, Flags, CustomFlags, components::at<1>>(
 			serializer, "floatType", floatUnit.floatType);
-		serializer.template endWriteStruct<Flags, CustomFlags, SerializeComponentType>();
+		if (e1.hasValue()) { return e1.value().addSource(sourceName); }
+
+		auto endError = serializer.template endWriteStruct<Flags, CustomFlags, SerializeComponentType>();
+		if (endError.hasValue()) { return endError.value().addSource(sourceName); }
+	
+		return natl::OptionEmpty{};
 	}
 };
 
@@ -2420,23 +2457,32 @@ template<> struct natl::Deserialize<nadsad::ascii::TokenNumericWithFloatTypeUnit
 template<> struct natl::Serialize<nadsad::ascii::TokenStorageUnit> {
 	using as_type = SerializeStruct<natl::ui64, natl::ui64>;
 	using type = nadsad::ascii::TokenStorageUnit;
-	template<typename Serializer> using error_type = void;
+	template<typename Serializer> using error_type = StandardSerializeError<Serializer>;
 	constexpr static inline natl::ConstAsciiStringView name = "TokenScopeUnit";
-	constexpr static inline natl::ConstAsciiStringView sourceName = "natl::Deserialize<nadsad::ascii::TokenStorageUnit>::read";
+	constexpr static ConstAsciiStringView sourceName = "natl::Serialize<nadsad::ascii::TokenStorageUnit>::write";
 
 	template<typename Serializer, SerializeWriteFlag Flags,
 		CustomSerializeWriteFlag<Serializer> CustomFlags, typename SerializeComponentType>
 		requires(natl::CanSerializeStructC<Serializer> && IsSerializeComponentC<SerializeComponentType>)
-	constexpr static void write(Serializer& serializer, const type storageUnit) noexcept {
+	constexpr static natl::Option<error_type<Serializer>> write(Serializer& serializer, const type storageUnit) noexcept {
 		using members = as_type::members_serialize_types;
 		using components = natl::SerializeStructMemberComponents<type, as_type>;
 
-		serializer.template beginWriteStruct<Flags, CustomFlags, SerializeComponentType>();
-		serializeWriteNamedMatch<members::at<0>, Serializer, Flags, CustomFlags, components::at<0>>(
+		auto beginError = serializer.template beginWriteStruct<Flags, CustomFlags, SerializeComponentType>();
+		if (beginError.hasValue()) { return beginError.value().addSource(sourceName); }
+
+		auto e0 = serializeWriteNamedMatch<members::at<0>, Serializer, Flags, CustomFlags, components::at<0>>(
 			serializer, "size", storageUnit.size);
-		serializeWriteNamedMatch<members::at<1>, Serializer, Flags, CustomFlags, components::at<1>>(
+		if (e0.hasValue()) { return e0.value().addSource(sourceName); }
+
+		auto e1 = serializeWriteNamedMatch<members::at<1>, Serializer, Flags, CustomFlags, components::at<1>>(
 			serializer, "escapeCount", storageUnit.escapeCount);
-		serializer.template endWriteStruct<Flags, CustomFlags, SerializeComponentType>();
+		if (e1.hasValue()) { return e1.value().addSource(sourceName); }
+
+		auto endError = serializer.template endWriteStruct<Flags, CustomFlags, SerializeComponentType>();
+		if (endError.hasValue()) { return endError.value().addSource(sourceName); }
+		
+		return natl::OptionEmpty{};
 	}
 };
 
@@ -2476,22 +2522,32 @@ template<> struct natl::Deserialize<nadsad::ascii::TokenStorageUnit> {
 template<> struct natl::Serialize<nadsad::ascii::TokenScopeUnit> {
 	using as_type = SerializeStruct<natl::ui64, natl::ui64>;
 	using type = nadsad::ascii::TokenScopeUnit;
-	template<typename Serializer> using error_type = void;
+	template<typename Serializer> using error_type = StandardSerializeError<Serializer>;
 	constexpr static inline natl::ConstAsciiStringView name = "TokenScopeUnit";
+	constexpr static ConstAsciiStringView sourceName = "natl::Serialize<nadsad::ascii::TokenScopeUnit>::write";
 
 	template<typename Serializer, SerializeWriteFlag Flags,
 		CustomSerializeWriteFlag<Serializer> CustomFlags, typename SerializeComponentType>
 		requires(natl::CanSerializeStructC<Serializer> && IsSerializeComponentC<SerializeComponentType>)
-	constexpr static void write(Serializer& serializer, const type scopeUnit) noexcept {
+	constexpr static natl::Option<error_type<Serializer>> write(Serializer& serializer, const type scopeUnit) noexcept {
 		using members = as_type::members_serialize_types;
 		using components = natl::SerializeStructMemberComponents<type, as_type>;
 
-		serializer.template beginWriteStruct<Flags, CustomFlags, SerializeComponentType>();
-		serializeWriteNamedMatch<members::at<0>, Serializer, Flags, CustomFlags, components::at<0>>(
+		auto beginError = serializer.template beginWriteStruct<Flags, CustomFlags, SerializeComponentType>();
+		if (beginError.hasValue()) { return beginError.value().addSource(sourceName); }
+		
+		auto e0 = serializeWriteNamedMatch<members::at<0>, Serializer, Flags, CustomFlags, components::at<0>>(
 			serializer, "size", scopeUnit.size);
-		serializeWriteNamedMatch<members::at<1>, Serializer, Flags, CustomFlags, components::at<1>>(
+		if (e0.hasValue()) { return e0.value().addSource(sourceName); }
+
+		auto e1 = serializeWriteNamedMatch<members::at<1>, Serializer, Flags, CustomFlags, components::at<1>>(
 			serializer, "elementCount", scopeUnit.elementCount);
-		serializer.template endWriteStruct<Flags, CustomFlags, SerializeComponentType>();
+		if (e1.hasValue()) { return e1.value().addSource(sourceName); }
+		
+		auto endError = serializer.template endWriteStruct<Flags, CustomFlags, SerializeComponentType>();
+		if (endError.hasValue()) { return endError.value().addSource(sourceName); }
+
+		return natl::OptionEmpty{};
 	}
 };
 
@@ -2537,13 +2593,14 @@ template<> struct natl::Serialize<nadsad::ascii::Token> {
 		nadsad::ascii::AdditionalTokenInfoVariant //info
 	>;
 	using type = nadsad::ascii::Token;
-	template<typename Serializer> using error_type = void;
+	template<typename Serializer> using error_type = StandardSerializeError<Serializer>;
 	constexpr static inline natl::ConstAsciiStringView name = "Token";
+	constexpr static ConstAsciiStringView sourceName = "natl::Serialize<nadsad::ascii::Token>::write";
 
 	template<typename Serializer, SerializeWriteFlag Flags,
 		CustomSerializeWriteFlag<Serializer> CustomFlags, typename SerializeComponentType>
 		requires(natl::CanSerializeStructC<Serializer>&& IsSerializeComponentC<SerializeComponentType>)
-	constexpr static void write(
+	constexpr static natl::Option<error_type<Serializer>> write(
 		Serializer& serializer,
 		const nadsad::ascii::Token& token,
 		const natl::ui64& tokenIndex,
@@ -2619,32 +2676,52 @@ template<> struct natl::Serialize<nadsad::ascii::Token> {
 			break;
 		}
 
-		serializer.template beginWriteStruct<Flags, CustomFlags, SerializeComponentType>();
-		serializeWriteNamedMatch<members::at<0>, Serializer, Flags, CustomFlags, components::at<0>, nadsad::ascii::TokenType>(
+		auto beginError = serializer.template beginWriteStruct<Flags, CustomFlags, SerializeComponentType>();
+		if (beginError.hasValue()) { return beginError.value().addSource(sourceName); }
+
+		auto e0 = serializeWriteNamedMatch<members::at<0>, Serializer, Flags, CustomFlags, components::at<0>, nadsad::ascii::TokenType>(
 			serializer, "type", token.type);
-		serializeWriteNamedMatch<members::at<1>, Serializer, Flags, CustomFlags, components::at<1>, natl::Size>(
+		if (e0.hasValue()) { return e0.value().addSource(sourceName); }
+
+		auto e1 = serializeWriteNamedMatch<members::at<1>, Serializer, Flags, CustomFlags, components::at<1>, natl::Size>(
 			serializer, "offset", columnNumber);
-		serializeWriteNamedMatch<members::at<2>, Serializer, Flags, CustomFlags, components::at<2>, natl::Size>(
+		if (e1.hasValue()) { return e1.value().addSource(sourceName); }
+
+		auto e2 = serializeWriteNamedMatch<members::at<2>, Serializer, Flags, CustomFlags, components::at<2>, natl::Size>(
 			serializer, "lineNumber", lineNumber);
-		serializeWriteNamedMatch<members::at<3>, Serializer, Flags, CustomFlags, components::at<3>, natl::Size>(
+		if (e2.hasValue()) { return e2.value().addSource(sourceName); }
+
+		auto e3 = serializeWriteNamedMatch<members::at<3>, Serializer, Flags, CustomFlags, components::at<3>, natl::Size>(
 			serializer, "columnNumber", columnNumber);
+		if (e3.hasValue()) { return e3.value().addSource(sourceName); }
 
 		switch (token.type) {
 		case nadsad::ascii::TokenType::start:
-		case nadsad::ascii::TokenType::end:
-			serializeWriteNamedMatch<members::at<4>, Serializer, Flags, CustomFlags, components::at<4>>(
-				serializer, "value", "");
-			break;
-		default:
-			natl::ConstAsciiStringView valueAsString(&lexicalInfo.source[token.offset], tokenSize);
-			serializeWriteNamedMatch<members::at<4>, Serializer, Flags, CustomFlags, components::at<4>>(
-				serializer, "value", valueAsString);
+		case nadsad::ascii::TokenType::end: 
+			{
+				auto e4 = serializeWriteNamedMatch<members::at<4>, Serializer, Flags, CustomFlags, components::at<4>>(
+					serializer, "value", "");
+				if (e4.hasValue()) { return e4.value().addSource(sourceName); }
+				break;
+			}
+		default: 
+			{
+				natl::ConstAsciiStringView valueAsString(&lexicalInfo.source[token.offset], tokenSize);
+				auto e4 = serializeWriteNamedMatch<members::at<4>, Serializer, Flags, CustomFlags, components::at<4>>(
+					serializer, "value", valueAsString);
+				if (e4.hasValue()) { return e4.value().addSource(sourceName); }
+			}
 			break;
 		}
 
-		serializeWriteNamedMatch<members::at<5>, Serializer, Flags, CustomFlags, components::at<5>>(
+		auto e5 = serializeWriteNamedMatch<members::at<5>, Serializer, Flags, CustomFlags, components::at<5>>(
 			serializer, "info", additionalTokenInfo);
-		serializer.template endWriteStruct<Flags, CustomFlags, SerializeComponentType>();
+		if (e5.hasValue()) { return e5.value().addSource(sourceName); }
+
+		auto endError = serializer.template endWriteStruct<Flags, CustomFlags, SerializeComponentType>();
+		if (endError.hasValue()) { return endError.value().addSource(sourceName); }
+
+		return natl::OptionEmpty{};
 	}
 };
 
@@ -2769,27 +2846,35 @@ template<> struct natl::Deserialize<nadsad::ascii::Token> {
 template<> struct natl::Serialize<nadsad::ascii::LexicalError> {
 	using as_type = natl::SerializeStruct<natl::String>;
 	using type = nadsad::ascii::LexicalError;
-	template<typename Serializer> using error_type = void;
+	template<typename Serializer> using error_type = StandardSerializeError<Serializer>;
 	constexpr static inline natl::ConstAsciiStringView name = "LexicalError";
+	constexpr static ConstAsciiStringView sourceName = "natl::Serialize<nadsad::ascii::LexicalError>::write";
 
 	template<typename Serializer, SerializeWriteFlag Flags,
 		CustomSerializeWriteFlag<Serializer> CustomFlags, typename SerializeComponentType>
 		requires(natl::CanSerializeStructC<Serializer> && IsSerializeComponentC<SerializeComponentType>)
-	constexpr static void write(Serializer& serializer, const nadsad::ascii::LexicalError& lexicalError, const nadsad::ascii::LexicalInfo& lexicalInfo) noexcept {
+	constexpr static natl::Option<error_type<Serializer>> write(Serializer& serializer, const nadsad::ascii::LexicalError& lexicalError, const nadsad::ascii::LexicalInfo& lexicalInfo) noexcept {
 		using members = as_type::members_serialize_types;
 		using components = natl::SerializeStructMemberComponents<type, as_type>;
 
-		serializer.template beginWriteStruct<Flags, CustomFlags, SerializeComponentType>();
+		auto beginError = serializer.template beginWriteStruct<Flags, CustomFlags, SerializeComponentType>();
+		if (beginError.hasValue()) { return beginError.value().addSource(sourceName); }
+		
 		natl::String errorMessage;
 		if (nadsad::ascii::lexicalErrorToMessage(errorMessage, lexicalError, lexicalInfo)) {
-			serializeWriteNamedMatch<members::at<0>, Serializer, Flags, CustomFlags, components::at<0>>(
+			auto writeError = serializeWriteNamedMatch<members::at<0>, Serializer, Flags, CustomFlags, components::at<0>>(
 				serializer, "message", errorMessage.toStringView());
-			natl::println(errorMessage.toStringView());
+			if (writeError.hasValue()) { return writeError.value().addSource(sourceName); }
 		} else {
-			serializeWriteNamedMatch<members::at<0>, Serializer, Flags, CustomFlags, components::at<0>>(
+			auto writeError = serializeWriteNamedMatch<members::at<0>, Serializer, Flags, CustomFlags, components::at<0>>(
 				serializer, "message", "failed to format error");
+			if (writeError.hasValue()) { return writeError.value().addSource(sourceName); }
 		}
-		serializer.template endWriteStruct<Flags, CustomFlags, SerializeComponentType>();
+
+		auto endError = serializer.template endWriteStruct<Flags, CustomFlags, SerializeComponentType>();
+		if (endError.hasValue()) { return endError.value().addSource(sourceName); }
+
+		return natl::OptionEmpty{};
 	}
 };
 
@@ -2828,34 +2913,44 @@ template<> struct natl::Deserialize<nadsad::ascii::LexicalError> {
 template<> struct natl::Serialize<nadsad::ascii::SerializeTokensFullInfo> {
 	using as_type = natl::SerializeArray<nadsad::ascii::Token>;
 	using type = nadsad::ascii::SerializeTokensFullInfo;
-	template<typename Serializer> using error_type = void;
+	template<typename Serializer> using error_type = StandardSerializeError<Serializer>;
+	constexpr static ConstAsciiStringView sourceName = "natl::Serialize<nadsad::ascii::SerializeTokensFullInfo>::write";
 
 	template<typename Serializer, SerializeWriteFlag Flags,
 		CustomSerializeWriteFlag<Serializer> CustomFlags, typename SerializeComponentType>
 		requires(natl::CanSerializeArrayC<Serializer> && IsSerializeComponentC<SerializeComponentType>)
-	constexpr static void write(Serializer& serializer, const type&, const nadsad::ascii::LexicalInfo& lexicalInfo) noexcept {
+	constexpr static natl::Option<error_type<Serializer>> write(Serializer& serializer, const type&, const nadsad::ascii::LexicalInfo& lexicalInfo) noexcept {
+		using array_component = natl::SerializeArrayComponent<type>;
+
 		if (lexicalInfo.tokenUnits.isEmpty()) {
-			serializer.template writeEmptyArray<Flags, CustomFlags, SerializeComponentType>();
+			auto error = serializer.template writeEmptyArray<Flags, CustomFlags, array_component>();
+			if (error.hasValue()) { return error.value().addSource(sourceName); }
 		} else {
-			serializer.template beginWriteArray<Flags, CustomFlags, SerializeComponentType>(lexicalInfo.numberOfTokens);
+			auto beginError = serializer.template beginWriteArray<Flags, CustomFlags, SerializeComponentType>(lexicalInfo.numberOfTokens);
+			if (beginError.hasValue()) { return beginError.value().addSource(sourceName); }
 
 			natl::Size tokenIndex = 0;
 			while (tokenIndex < lexicalInfo.tokenUnits.size()) {
 				const nadsad::ascii::Token token = nadsad::ascii::getTokenAt(tokenIndex, lexicalInfo.tokenUnits);
 				const natl::Size tokenSize = nadsad::ascii::getSizeOfToken(tokenIndex, token, lexicalInfo.tokenUnits);
 
-				using array_component = natl::SerializeArrayComponent<type>;
-				serializer.template beginWriteArrayElement<Flags, CustomFlags, SerializeComponentType>();
-				serializeWrite<Serializer, Flags, CustomFlags, array_component>(serializer, token, tokenIndex, tokenSize, lexicalInfo);
-				serializer.template endWriteArrayElement<Flags, CustomFlags, SerializeComponentType>();
+				auto bwElementError = serializer.template beginWriteArrayElement<Flags, CustomFlags, array_component>();
+				if (bwElementError.hasValue()) { return bwElementError.value().addSource(sourceName); }
+
+				auto elementError = serializeWrite<Serializer, Flags, CustomFlags, array_component>(serializer, token, tokenIndex, tokenSize, lexicalInfo);
+				if (elementError.hasValue()) { return elementError.value().addSource(sourceName); }
+
+				auto ewElementError = serializer.template endWriteArrayElement<Flags, CustomFlags, array_component>();
+				if (ewElementError.hasValue()) { return ewElementError.value().addSource(sourceName); }
 
 				tokenIndex = nadsad::ascii::nextTokenIndex(tokenIndex, token, lexicalInfo.tokenUnits);
 			}
 
-			serializer.template endWriteArray<Flags, CustomFlags, SerializeComponentType>();
+			auto endError = serializer.template endWriteArray<Flags, CustomFlags, SerializeComponentType>();
+			if (endError.hasValue()) { return endError.value().addSource(sourceName); }
 		}
+		return natl::OptionEmpty{};
 	}
-
 };
 
 template<> struct natl::Deserialize<nadsad::ascii::SerializeTokensFullInfo> {
@@ -2924,28 +3019,37 @@ template<> struct natl::Serialize<nadsad::ascii::LexicalInfo> {
 		natl::ArrayView<nadsad::ascii::LexicalError>,
 		natl::ArrayView<nadsad::ascii::Token>>;
 	using type = nadsad::ascii::LexicalInfo;
-	template<typename Serializer> using error_type = void;
+	template<typename Serializer> using error_type = StandardSerializeError<Serializer>;
 	constexpr static inline natl::ConstAsciiStringView name = "LexicalInfo";
+	constexpr static ConstAsciiStringView sourceName = "natl::Serialize<nadsad::ascii::LexicalInfo>::write";
 
 	template<typename Serializer, SerializeWriteFlag Flags,
 		CustomSerializeWriteFlag<Serializer> CustomFlags, typename SerializeComponentType>
 		requires(natl::CanSerializeStructC<Serializer>&& IsSerializeComponentC<SerializeComponentType>)
-	constexpr static void write(Serializer& serializer, const nadsad::ascii::LexicalInfo& lexicalInfo) noexcept {
+	constexpr static natl::Option<error_type<Serializer>> write(Serializer& serializer, const nadsad::ascii::LexicalInfo& lexicalInfo) noexcept {
 		using members = as_type::members_serialize_types;
 		using components = natl::SerializeStructMemberComponents<type, as_type>;
 
-		serializer.template beginWriteStruct<Flags, CustomFlags, SerializeComponentType>();
-		serializeWriteNamedMatch<members::at<0>, Serializer, Flags, CustomFlags, components::at<0>>(
+		auto beginError = serializer.template beginWriteStruct<Flags, CustomFlags, SerializeComponentType>();
+		if (beginError.hasValue()) { return beginError.value().addSource(sourceName); }
+		auto e0 = serializeWriteNamedMatch<members::at<0>, Serializer, Flags, CustomFlags, components::at<0>>(
 			serializer, "source", ConstAsciiStringView(lexicalInfo.source));
-		serializeWriteNamedMatch<members::at<1>, Serializer, Flags, CustomFlags, components::at<1>>(
+		if (e0.hasValue()) { return e0.value().addSource(sourceName); }
+		auto e1 = serializeWriteNamedMatch<members::at<1>, Serializer, Flags, CustomFlags, components::at<1>>(
 			serializer, "newlineOffsets", lexicalInfo.newLineOffsets.toArrayView());
-		serializeWriteNamedMatch<members::at<2>, Serializer, Flags, CustomFlags, components::at<2>>(
+		if (e1.hasValue()) { return e1.value().addSource(sourceName); }
+		auto e2 = serializeWriteNamedMatch<members::at<2>, Serializer, Flags, CustomFlags, components::at<2>>(
 			serializer, "offsetToTokenIndexMap", lexicalInfo.offsetToTokenIndexMap);
-		serializeWriteNamedMatch<members::at<3>, Serializer, Flags, CustomFlags, components::at<3>>(
+		if (e2.hasValue()) { return e2.value().addSource(sourceName); }
+		auto e3 = serializeWriteNamedMatch<members::at<3>, Serializer, Flags, CustomFlags, components::at<3>>(
 			serializer, "errors", lexicalInfo.errors.toArrayView(), lexicalInfo);
-		serializeWriteNamedMatch<members::at<4>, Serializer, Flags, CustomFlags, components::at<4>>(
+		if (e3.hasValue()) { return e3.value().addSource(sourceName); }
+		auto e4 = serializeWriteNamedMatch<members::at<4>, Serializer, Flags, CustomFlags, components::at<4>>(
 			serializer, "tokens", nadsad::ascii::SerializeTokensFullInfo{}, lexicalInfo);
-		serializer.template endWriteStruct<Flags, CustomFlags, SerializeComponentType>();
+		if (e4.hasValue()) { return e4.value().addSource(sourceName); }
+		auto endError = serializer.template endWriteStruct<Flags, CustomFlags, SerializeComponentType>();
+		if (endError.hasValue()) { return endError.value().addSource(sourceName); }
+		return natl::OptionEmpty{};
 	}
 };
 

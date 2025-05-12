@@ -1,21 +1,28 @@
-	template<typename DataType> struct Serialize<Option<DataType>> {
-		using as_type = SerializeOptional<DataType>;
-		using type = Option<DataType>;
-		template<typename Serializer> using error_type = void;
-
-		template<typename Serializer, SerializeWriteFlag Flags,
-			CustomSerializeWriteFlag<Serializer> CustomFlags, typename SerializeComponentType, 
-			typename... DeserializerArgs>
-			requires(natl::CanSerializeStrC<Serializer>&& IsSerializeComponentC<SerializeComponentType>)
-		constexpr static void write(Serializer& serializer, const type& value, DeserializerArgs&&... deserializerArgs) noexcept {
-			if (!value.hasValue()) {
-				serializer.template writeEmptyOptional<Flags, CustomFlags, SerializeComponentType>(str);
+		constexpr OptionPtr<ErrorType> optionalError()& noexcept {
+			if (state == ExpectState::value) {
+				return &errorData;
 			} else {
-				using optional_component = SerializeOptionalComponent<type>;
-				serializer.template beginWriteOptional<Flags, CustomFlags, SerializeComponentType>(str);
-				serializeWrite<Serializer, Flags, CustomFlags, optional_component>(
-					serializer, value.value(), natl::forward<DeserializerArgs>(deserializerArgs)...);
-				serializer.template endWriteOptional<Flags, CustomFlags, SerializeComponentType>(str);
+				return natl::OptionEmpty{};
 			}
 		}
-	};
+		constexpr OptionPtr<ErrorType> optionalError() const& noexcept {
+			if (state == ExpectState::value) {
+				return &errorData;
+			} else {
+				return natl::OptionEmpty{};
+			}
+		};
+		constexpr OptionPtr<ErrorType> optionalError() && noexcept {
+			if (state == ExpectState::value) {
+				return &errorData;
+			} else {
+				return natl::OptionEmpty{};
+			}
+		};
+		constexpr OptionPtr<ErrorType> optionalError() const&& noexcept {
+			if (state == ExpectState::value) {
+				return &errorData;
+			} else {
+				return natl::OptionEmpty{};
+			}
+		};

@@ -14,12 +14,12 @@ constexpr inline natl::ConstAsciiStringView natlTestFrom = "NadsadJumpTest";
 	} 
 
 natl::Bool allIntegersJumpTest() noexcept {
-	using custom_serializer = nadsad::ascii::Serializer<1000, natl::SerializeFlag::pretty>;
+	using custom_serializer = nadsad::ascii::Serializer<1000, natl::SerializeFlags::pretty>;
 	using custom_deserializer = nadsad::ascii::Deserializer<
-		natl::ErrorHandlingFlag::shorten,
+		natl::DeserializeFlags::shortenError,
 		natl::DummyDeserializeElementInfo,
 		natl::FullDeserializeErrorHandler<8>>;
-	constexpr natl::DeserializeReadFlag readFlag = natl::DeserializeReadFlag::v_default;
+	constexpr natl::DeserializeReadFlag readFlag = natl::DeserializeReadFlag::none;
 	constexpr auto customReadFlag = natl::DefaultCustomDeserializeReadFlag<custom_deserializer>;
 
 	natl::Test test;
